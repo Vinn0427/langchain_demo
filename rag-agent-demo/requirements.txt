@@ -1,0 +1,6 @@
+langchain-core>=0.3
+langchain-openai>=0.3
+langchain-text-splitters>=0.3
+langgraph>=0.4
+python-dotenv>=1.0
+numpy>=1.24
