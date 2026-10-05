@@ -1,10 +1,15 @@
 """
-RAG 索引构建：加载 → 切分 → Embedding → VectorStore → Retriever
+RAG 检索层：加载 → 切分 → Embedding → VectorStore → Retriever
+
+对外提供：
+    retrieve_documents(query) -> list[Document]   底层检索函数，Agent Workflow 直接使用
+    format_documents(docs)    -> str              把 Document 拼成交给 LLM 的 Context 文本
 """
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter
@@ -38,3 +43,15 @@ def build_retriever():
 
     # 1.5 Retriever：输入 query 字符串 → 向量化 → 相似度检索 → 返回最相关的 k 个 Document
     return vector_store.as_retriever(search_kwargs={"k": 2})
+
+
+# 索引阶段：import 本模块时执行一次
+retriever = build_retriever()
+
+
+def retrieve_documents(query: str) -> list[Document]:
+    return retriever.invoke(query)
+
+
+def format_documents(docs: list[Document]) -> str:
+    return "\n\n---\n\n".join(doc.page_content for doc in docs)
