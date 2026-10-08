@@ -1,0 +1,14 @@
+# 本地单节点 Qdrant（开发环境）
+#   docker compose up -d      启动
+#   docker compose down       停止（数据保留在 ./qdrant_storage）
+# Dashboard: http://localhost:6333/dashboard
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.15.4
+    container_name: rag-demo-qdrant
+    ports:
+      - "6333:6333"   # REST
+      - "6334:6334"   # gRPC
+    volumes:
+      - ./qdrant_storage:/qdrant/storage   # 持久化：容器删除 / 重启后索引仍然存在
+    restart: unless-stopped

@@ -1,42 +1,57 @@
 # rag-agent-demo
 
-一个用于**学习 LangChain + LangGraph Agent 编排机制**的最小 Python Demo。
+一个用于**学习 LangChain + LangGraph Agent 编排与 RAG 工程**的 Python Demo，按版本逐步演进：
 
-- **Version 1**：用 LangGraph 显式搭建单 Agent 的 Reason → Act → Observe 循环，RAG Retriever 是 Agent 的一个 Tool。
-- **Version 2（当前）**：在 Agent 发起检索之后、看到检索结果之前，插入一段 **Corrective RAG Workflow**：
-  `Retrieve → Grade Documents → (Query Rewrite → Retrieve)* → ToolMessage`。
+| 版本 | 核心链路 | 学习重点 |
+|---|---|---|
+| Version 1 | `Agent ↔ Tool` | Tool Calling、Agent Loop |
+| Version 2 | `Retrieve → Grade → Rewrite → Retry` | State、Node、Conditional Edge、Loop、Stop Condition |
+| **Version 3（当前）** | `Hybrid Retrieval → RRF → Rerank → Confidence Gate → Streaming → Observability → Evaluation` | RAG Engineering、Retrieval Quality、Latency Analysis、Evaluation |
+
+核心原则：**LangGraph 负责业务流程编排；RAG 模块内部负责检索 pipeline。**
 
 ```text
 rag-agent-demo/
-├── data/
-│   └── knowledge.md    # 测试知识库（Redis / RAG / Agent 三个主题）
-├── rag/
-│   ├── __init__.py
-│   └── retriever.py    # 索引构建 + retrieve_documents(query) + format_documents(docs)
-├── agent/
-│   ├── __init__.py
-│   ├── state.py        # AgentState：messages + Corrective RAG 的业务状态
-│   ├── tools.py        # @tool search_knowledge_base：交给 LLM 的"工具说明书"
-│   ├── nodes.py        # 所有 Node / 路由函数 / LLM / Prompt / MAX_RETRY
-│   └── graph.py        # 只做编排：加节点、加边、compile
-├── main.py             # 程序入口：question → graph.invoke() → 打印结果
+├── data/                   # 知识库：7 篇 Markdown（redis / rag / agent / deploy / oncall / mysql / api）
+├── config.py               # 集中配置：模型、Qdrant、Top-K、RRF、Gate 阈值、MAX_RETRY（均可被 .env 覆盖）
+├── rag/                    # 检索层（不依赖 agent）
+│   ├── store.py            #   Qdrant 连接、Point 数据模型
+│   ├── indexing.py         #   Offline：load → chunk → dense embedding → BM25 sparse → Qdrant
+│   ├── dense_retriever.py  #   query embedding + Qdrant dense search
+│   ├── sparse_retriever.py #   jieba 分词 + BM25 sparse vector + Qdrant sparse search
+│   ├── fusion.py           #   Reciprocal Rank Fusion
+│   ├── reranker.py         #   Cross-Encoder Reranker（bge-reranker-base，本地 ONNX）
+│   ├── gate.py             #   Retrieval Gate：HIGH / MEDIUM / LOW
+│   └── pipeline.py         #   Online：retrieve(query) = Dense + Sparse → RRF → Rerank
+├── agent/                  # 编排层
+│   ├── state.py            #   AgentState（V2 字段 + gate_level / top_rerank_score）
+│   ├── tools.py            #   search_knowledge_base：交给 LLM 的"工具说明书"
+│   ├── nodes.py            #   Node / 路由 / LLM / Prompt；Agent 流式输出与 TTFT 打点
+│   └── graph.py            #   只做编排：加节点、加边、compile
+├── observability/
+│   └── metrics.py          # perf_counter 阶段计时、TTFT、Performance Report
+├── scripts/
+│   └── build_index.py      # Offline Indexing 入口
+├── eval/
+│   ├── dataset.json        # 24 条 query → relevant_chunk_ids
+│   └── run_eval.py         # Recall@K / MRR / latency avg-p50-p95
+├── main.py                 # Online Query 入口：流式回答 + Performance Report
+├── docker-compose.yml      # 单节点 Qdrant，数据挂载到 ./qdrant_storage
 ├── requirements.txt
-├── .env.example
-└── README.md
+└── .env.example
 ```
 
 模块依赖方向（单向，无循环 import）：
 
 ```text
-main.py
-   ↓
-agent/graph.py
-   ↓
-agent/nodes.py ──→ agent/state.py
-   │
-   ├──→ agent/tools.py ──→ rag/retriever.py
-   └────────────────────→ rag/retriever.py   （retrieve_node 直接调用 retrieve_documents）
+main.py ──→ agent/graph.py ──→ agent/nodes.py ──→ rag/pipeline.py ──→ dense / sparse / fusion / reranker ──→ rag/store.py ──→ Qdrant
+                                    │                rag/gate.py
+                                    └──→ agent/state.py, agent/tools.py
+observability/metrics.py ← 被 rag、agent、main 调用（它自己不 import 任何业务模块）
+config.py                ← 被所有模块读取
 ```
+
+`rag/` 中没有任何 `import agent`。rag 层通过 `ContextVar` 拿到当前请求的 metrics 对象，不需要 agent 把 metrics 作为参数传进来。
 
 ---
 
@@ -46,296 +61,355 @@ agent/nodes.py ──→ agent/state.py
 cd rag-agent-demo
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env                 # 填入 API Key / Base URL / 模型名
 
-cp .env.example .env      # 填入 API Key / Base URL / 模型名
-python main.py            # 依次运行 Case 1 ~ Case 4
-python main.py "RAG 的五步法是什么？"   # 自定义问题
+# 1) 启动 Qdrant（REST 6333 / gRPC 6334，数据持久化在 ./qdrant_storage）
+docker compose up -d
+
+# 2) Offline Indexing：构建完成后退出；文档变更后重新运行
+python scripts/build_index.py
+
+# 3) Online Query：只读已有索引，不会重新做文档 Embedding
+python main.py                       # 依次运行内置的 5 个 Case
+python main.py "灰度发布分几个阶段？"   # 自定义问题
+
+# 4) Offline Evaluation
+python eval/run_eval.py              # 检索评测 + 端到端评测（会调用 Chat 模型）
+python eval/run_eval.py --no-e2e     # 只跑检索评测
 ```
 
-任何 OpenAI-compatible 服务都可以，只要它同时提供 **Chat（支持 tool calling）** 和 **Embedding** 接口。若 Chat 与 Embedding 来自不同服务商，在 `.env` 中额外填写 `EMBEDDING_API_KEY` / `EMBEDDING_BASE_URL`。
-
-### 测试 Case 与预期输出
-
-**Case 1：普通问题** —— `Agent → END`，完全不进入 RAG Workflow
-
-```text
-[User] 用一句话介绍一下 Python 这门编程语言。
-[Agent] LLM called
-[Agent] final answer: Python 是一门……
-[Trace] HumanMessage → AIMessage
-```
-
-**Case 2：知识库问题，第一次检索成功** —— `Agent → Retrieve → Grade(relevant) → ToolMessage → Agent → END`
-
-```text
-[User] 根据知识库，我们团队的 Redis 集群代号是什么？主要用来做什么？
-[Agent] LLM called
-[Agent] tool_call: search_knowledge_base args={'query': '团队 Redis 集群代号及主要用途'}
-[Retrieve] query: 团队 Redis 集群代号及主要用途  (original query from tool_call)
-[Retrieve] retrieved 2 documents
-[Grader] document 1: relevant
-[Grader] document 2: irrelevant
-[Grader] 1 relevant documents
-[Tool] filtered context (1 documents) written as ToolMessage
-[Agent] LLM called again
-[Agent] final answer: Redis 集群代号是「青鸟」（Bluebird），主要用于缓存用户会话和接口限流……
-[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
-[State] retrieval_query='团队 Redis 集群代号及主要用途' retry_count=0 relevant_documents=1
-```
-
-注意 Grader 把 2 个检索结果过滤成了 1 个，LLM 最终只看到 Redis 那一段。
-
-**Case 3：第一次检索可能被带偏，需要 Rewrite** —— 问题里的 "Agent 应用" 会把向量检索引向 Agent / RAG 主题，而答案其实在 Redis 主题里
-
-```text
-[User] 根据知识库，我们的 Agent 应用里，用户会话一般存在团队的哪个组件里？
-[Agent] tool_call: search_knowledge_base args={'query': 'Agent 应用里用户会话存在哪个组件'}
-[Retrieve] query: Agent 应用里用户会话存在哪个组件  (original query from tool_call)
-[Retrieve] retrieved 2 documents
-[Grader] document 1: irrelevant
-[Grader] document 2: irrelevant
-[Grader] 0 relevant documents
-[Rewrite] original query: Agent 应用里用户会话存在哪个组件
-[Rewrite] rewritten query: Agent 应用用户会话存储组件 Redis Session Manager
-[Retry] 1 / 1
-[Retrieve] query: Agent 应用用户会话存储组件 Redis Session Manager  (rewritten retrieval query)
-[Retrieve] retrieved 2 documents
-[Grader] 1 relevant documents
-[Tool] filtered context (1 documents) written as ToolMessage
-[Agent] LLM called again
-[Agent] final answer: ……用户会话一般存在 Redis（团队内部代号「青鸟」）中。
-[State] retrieval_query='Agent 应用用户会话存储组件 Redis Session Manager' retry_count=1 relevant_documents=1
-```
-
-**Case 4：知识库中根本没有的信息** —— Rewrite 一次后仍然没有相关文档，触发 `MAX_RETRY` 终止条件
-
-```text
-[User] 根据知识库，我们团队的 Kafka 集群代号是什么？
-[Retrieve] query: Kafka 集群代号  (original query from tool_call)
-[Grader] 0 relevant documents
-[Rewrite] original query: Kafka 集群代号
-[Rewrite] rewritten query: 团队 Kafka 集群代号 命名规范
-[Retry] 1 / 1
-[Retrieve] query: 团队 Kafka 集群代号 命名规范  (rewritten retrieval query)
-[Grader] 0 relevant documents
-[Retry] max retry reached (1 / 1), stop rewriting
-[Tool] no relevant context, ToolMessage: 知识库中没有找到与当前问题足够相关的信息。
-[Agent] LLM called again
-[Agent] final answer: 团队内部知识库中并未包含关于 Kafka 集群代号的相关信息……
-[State] retrieval_query='团队 Kafka 集群代号 命名规范' retry_count=1 relevant_documents=0
-```
-
-### 关于随机性（重要）
-
-- **Case 3 不保证每次都进入 Rewrite。** 知识库只有 3 个 chunk，Retriever 取 `k=2`，一次检索就能召回三分之二的内容，所以第一次检索经常已经包含 Redis 那段。实测 7 次中有 2 次进入了 Rewrite，其余几次第一次检索就被判为 relevant，直接走 Case 2 的路径。是否进入 Rewrite 取决于 LLM 生成的 query、Embedding 相似度和 Grader 的判断，这三者都有波动。
-- **Case 4 稳定展示** `Retrieve → Grade → Rewrite → Retrieve → Grade → Max Retry` 这条完整路径，因为知识库中确实不存在 Kafka 相关内容。
-- 代码中**没有**为了让 Case 3 固定通过而硬编码任何业务判断（比如"问题含 Agent 就判不相关"），Grader 和 Rewrite 完全由 LLM 决定。
-- LLM 是否调用工具也由模型自己决定，不同模型的表现可能略有差异。
+- 首次运行会从 HuggingFace 下载 Reranker 模型 `BAAI/bge-reranker-base`（约 1 GB），之后从 `~/.cache/fastembed` 加载。
+- Qdrant Dashboard：<http://localhost:6333/dashboard>。`docker compose down && docker compose up -d` 后，索引仍然存在。
+- 在线进程启动时会先 `warmup()`：检查 collection 是否存在，加载 Reranker 和 jieba 词典。这些时间不计入任何一次请求的 latency。
 
 ---
 
-## 2. Version 1 → Version 2 的变化
+## 2. Indexing Pipeline 与 Query Pipeline
 
-| | Version 1 | Version 2 |
-|---|---|---|
-| State | `MessagesState`（只有 `messages`） | 自定义 `AgentState`：`messages` + 5 个业务字段 |
-| tool_call 之后 | `tool_node` 立即执行 Tool，立即生成 ToolMessage | `retrieve` → `grade_documents` →（必要时 `rewrite_query` → `retrieve`）→ `build_tool_message` |
-| LLM 看到的 Context | Retriever 返回的全部 top-2 文档 | 经过 Grader 过滤后的相关文档，或"没有找到"提示 |
-| 条件边 | 1 个：`route_after_agent` | 2 个：`route_after_agent`、`route_after_grading` |
-| 循环 | 1 个：Agent Loop（由 LLM 决定是否退出） | 2 个：Agent Loop + Rewrite Loop（由 `retry_count` 决定何时退出） |
-| `search_knowledge_base` | 被 Graph 直接执行 | 只作为"工具说明书"交给 LLM；Graph 读取 tool_call，自己执行检索流程 |
-| 节点 | `agent`、`tools` | `agent`、`retrieve`、`grade_documents`、`rewrite_query`、`build_tool_message` |
+V2 在 `import rag.retriever` 时就会把全部文档重新 Embedding 一遍，写进 `InMemoryVectorStore`，进程退出后索引就丢了。V3 把这条链路拆成两条独立的 Pipeline：
 
-### Version 1 Graph
+### Offline Indexing Pipeline（`python scripts/build_index.py`）
 
 ```mermaid
-flowchart TD
-    START([START]) --> Agent[Agent Node]
-    Agent --> Cond{tool_call?}
-    Cond -- Yes --> Tool[Tool Node<br/>执行 search_knowledge_base]
-    Cond -- No --> END([END])
-    Tool -- ToolMessage --> Agent
+flowchart LR
+    Docs[data/*.md] --> Load[load]
+    Load --> Chunk["chunk<br/>按 ## 二级标题"]
+    Chunk --> Dense["dense embedding<br/>EMBEDDING_MODEL, 1024 维"]
+    Chunk --> Sparse["BM25 sparse vector<br/>jieba 分词 + TF 饱和 + 长度归一"]
+    Dense --> Upsert[(Qdrant<br/>collection rag_demo_v3)]
+    Sparse --> Upsert
 ```
 
-### Version 2 Graph（对应 `agent/graph.py`）
+实测：7 篇文档 → 19 个 chunk，总耗时约 1.6 s，其中 dense embedding 约 1.0 s。
+
+### Online Query Pipeline（`python main.py "问题"`）
+
+```mermaid
+flowchart LR
+    Q[query] --> E[query embedding]
+    E --> DS["Qdrant dense search<br/>Top DENSE_TOP_K"]
+    Q --> T[jieba 分词]
+    T --> SS["Qdrant sparse search<br/>Top SPARSE_TOP_K"]
+    DS --> RRF["RRF<br/>Top RRF_TOP_K"]
+    SS --> RRF
+    RRF --> RR["Cross-Encoder Rerank<br/>Top RERANK_TOP_K"]
+    RR --> Gate{Retrieval Gate}
+    Gate --> Agent["Agent<br/>Streaming Answer"]
+```
+
+在线进程只对 **query 本身**做一次 Embedding，不会读取 `data/`，也不会 import `rag/indexing.py`。
+
+### Qdrant Point 结构
+
+一个 chunk 对应一个 Point：
+
+```json
+{
+  "id": "uuid5(chunk_id)",
+  "vector": {
+    "dense": [0.0123, -0.0456, "... 共 1024 维"],
+    "bm25":  {"indices": [190934187, 2836301834, "..."], "values": [1.58, 1.21, "..."]}
+  },
+  "payload": {
+    "document_id": "redis",
+    "chunk_id": "redis_001",
+    "source": "data/redis.md",
+    "title": "Redis 使用手册",
+    "topic": "Redis 的用途",
+    "text": "## Redis 的用途\n\nRedis 是一个基于内存的 Key-Value 数据库……"
+  }
+}
+```
+
+- `dense`：Named dense vector，Cosine 距离。
+- `bm25`：Named sparse vector，collection 配置为 `modifier=IDF`，IDF 由 Qdrant 根据当前 collection 统计；文档侧的 value 只存 BM25 的 TF 部分。
+- `id`：用 `chunk_id` 计算 uuid5，同一个 chunk 每次重建索引得到的 id 都相同。
+
+---
+
+## 3. Version 3 完整 Graph
 
 ```mermaid
 flowchart TD
-    START --> Agent
+    User --> Agent
 
-    Agent -->|No Tool Call| END
-    Agent -->|Tool Call| Retrieve
+    Agent -->|Direct Answer| Final
+    Agent -->|RAG Tool Call| Hybrid
 
-    Retrieve --> Grade
+    Hybrid --> Dense
+    Hybrid --> Sparse
 
-    Grade -->|Relevant| ToolMessage
-    Grade -->|Not Relevant & Can Retry| Rewrite
-    Grade -->|Not Relevant & Max Retry| ToolMessage
+    Dense --> RRF
+    Sparse --> RRF
 
-    Rewrite --> Retrieve
+    RRF --> Rerank
+
+    Rerank --> Gate
+
+    Gate -->|High| ToolMessage
+    Gate -->|Medium| Grader
+    Gate -->|Low| Rewrite
+
+    Grader -->|Pass| ToolMessage
+    Grader -->|Fail| Rewrite
+
+    Rewrite --> Hybrid
 
     ToolMessage --> Agent
+
+    Agent --> Final
 ```
 
-图中节点名和代码的对应关系：`Agent` = `agent`、`Retrieve` = `retrieve`、`Grade` = `grade_documents`、`Rewrite` = `rewrite_query`、`ToolMessage` = `build_tool_message`。
+上图省略了 Stop Condition：`retry_count` 达到 `MAX_RETRY` 后，Low 和 Grader Fail 都会直接进入 ToolMessage（内容为"没找到"），不再 Rewrite。
 
-`agent/graph.py` 中的全部编排代码：
+LangGraph 中实际的节点（`agent/graph.py`）比上图少。Hybrid、Dense、Sparse、RRF、Rerank、Gate 都在 `retrieve` 这一个 Node 里，由 `rag.pipeline.retrieve()` 和 `rag.gate.retrieval_gate()` 完成：
 
 ```python
 builder.add_edge(START, "agent")
 builder.add_conditional_edges("agent", route_after_agent, ["retrieve", END])
 
-builder.add_edge("retrieve", "grade_documents")
+builder.add_conditional_edges("retrieve", route_after_gate, ["build_tool_message", "grade_documents", "rewrite_query"])
 builder.add_conditional_edges("grade_documents", route_after_grading, ["build_tool_message", "rewrite_query"])
 builder.add_edge("rewrite_query", "retrieve")
 
 builder.add_edge("build_tool_message", "agent")
 ```
 
+和 V2 相比，编排只改了一处：`retrieve` 之后不再固定进入 `grade_documents`，而是由 `route_after_gate` 分成三路。
+
 ---
 
-## 3. 为什么需要自定义 `AgentState`
+## 4. Hybrid Retrieval
 
-Version 1 的 State 只有 `messages`，因为工作流里流转的只有对话消息。
+| | Dense | Sparse / BM25 |
+|---|---|---|
+| 擅长 | **语义召回**：同义改写、换种说法（"撤回版本" ≈ "回滚"） | **关键词召回**：专有名词、代号、错误码（`AUTH-4031`、`Egret`、`KEYS`） |
+| 实现 | `embed_query()` → Qdrant `query_points(using="dense")` | `jieba.lcut_for_search` → `{token_id: 1.0}` → Qdrant `query_points(using="bm25")` |
+| 分数 | Cosine，0~1 | BM25，0~十几，无上界 |
 
-Version 2 的 Corrective RAG Workflow 需要在多个节点之间传递**业务数据**：
-
-| 字段 | 写入者 | 读取者 | 含义 |
-|---|---|---|---|
-| `messages` | `agent`、`build_tool_message` | `agent`、`retrieve`、Grader / Rewrite（取用户问题） | Agent 对话历史，reducer 为 `add_messages`（追加） |
-| `retrieval_query` | `retrieve`（第一次）、`rewrite_query` | `retrieve`、`rewrite_query` | 当前真正用于 Retriever 的 Query |
-| `documents` | `retrieve` | `grade_documents` | 当前一次检索得到的原始文档 |
-| `relevant_documents` | `grade_documents` | `route_after_grading`、`build_tool_message` | Grader 判断为相关的文档 |
-| `retry_count` | `retrieve`（重置为 0）、`rewrite_query`（+1） | `route_after_grading` | 已经 Rewrite 的次数 |
-| `pending_tool_call_id` | `retrieve`（第一次） | `retrieve`、`build_tool_message` | Agent 原始 tool_call 的 id |
-
-LangGraph 中 **State 就是节点之间的"共享内存"**，`messages` 只是其中一个字段。除 `messages` 外，其余字段没有 reducer，节点返回新值时会直接**覆盖**旧值，这正是 `retrieval_query`、`retry_count` 这类"当前值"需要的语义。
-
-> 实现说明：`AgentState` 用 `TypedDict` 显式写出了 `messages: Annotated[list[AnyMessage], add_messages]`，效果等同于继承 `MessagesState`。原因是本项目运行在 Python 3.9，继承 `MessagesState` 时 LangGraph 解析父类类型注解会报 `NameError`。
-
-## 4. 为什么 documents 不应该全部只存在 `messages` 里
-
-- **`messages` 是给 LLM 看的。** Agent Node 每次都会把 `SystemMessage + messages` 全部发给 LLM。把被 Grader 淘汰的文档、第一次失败的检索结果放进 `messages`，LLM 就会看到这些噪音，这恰恰是 Grader 想避免的。
-- **`messages` 必须符合协议格式。** 每个 tool_call 后面必须恰好跟一个对应的 ToolMessage。中间的检索、评分、改写不是对话的一部分，硬塞进 `messages` 会破坏这个结构。
-- **结构化数据更易使用。** `documents` 是 `list[Document]`，Grader 可以逐个判断；`retry_count` 是 `int`，路由函数可以直接比较。如果把它们拼成字符串塞进 `messages`，后续节点还得重新解析。
-- **追加和覆盖的语义不同。** `messages` 只追加不覆盖；`documents` 每次检索都应该被**替换**成新的结果。
-
-## 5. Retrieval Grader 的作用
-
-向量检索只保证"相似"，不保证"有用"。`k=2` 时即使只有 1 个文档相关，Retriever 也会返回 2 个。
-
-`grade_documents_node` 对每个文档调用一次 LLM：
+BM25 公式拆成两部分，分别在两个时机计算：
 
 ```text
-用户问题 + 文档内容 → grader_llm（with_structured_output(GradeResult)）→ relevant: true / false
+BM25(q, d) = Σ_{t∈q}  IDF(t)  ·  tf·(k1+1) / (tf + k1·(1 − b + b·|d|/avgdl))
+                      └Qdrant┘   └─────────── 离线算好，作为文档 sparse vector 的 value ───────────┘
 ```
 
-它有两个作用：
+- 文档侧（离线）：分词后统计 tf，用 `avgdl` 计算 TF 饱和和长度归一化。
+- 查询侧（在线）：每个 query 词的权重是 1.0，Qdrant 做点积时再乘以它维护的 IDF。在线查询不需要扫描文档，也不需要 `avgdl`。
+- `token_id`：取词的 md5 前 32 位，不需要维护词表文件。
 
-1. **过滤噪音**：只把相关文档交给 Agent（Case 2 中 2 个文档被过滤成 1 个）；
-2. **提供路由信号**：`relevant_documents` 是否为空，决定下一步去 `build_tool_message` 还是 `rewrite_query`。
-
-使用 Structured Output（Pydantic `GradeResult`）意味着 LLM 必须返回 `{"relevant": true/false}`，代码可以直接 `if result.relevant`，不需要解析自由文本。
-
-## 6. Query Rewrite 的作用
-
-Agent 在 tool_call 里写的 query 是 LLM 根据用户问题"顺手"生成的，不一定适合向量检索，比如带有误导性的词（Case 3 的 "Agent 应用"），或者表达太模糊。
-
-`rewrite_query_node` 根据**用户原始问题 + 当前 retrieval_query** 生成一个新的检索 Query：
-
-- 只生成 Query，**不回答问题**；
-- 写入 `retrieval_query`（覆盖），`retry_count += 1`；
-- 下一次进入 `retrieve_node` 时，使用的是 `state["retrieval_query"]`（rewritten retrieval query），而不是 tool_call 里的 original query。
-
-## 7. `retry_count` 为什么属于 Stop Condition
-
-`rewrite_query → retrieve → grade_documents → rewrite_query → ...` 是一个环。如果知识库里根本没有答案（Case 4），无论怎么改写都不会出现相关文档，这个环就永远不会自然结束。
-
-所以必须有一个**不依赖 LLM 判断**的退出条件：
+## 5. RRF Fusion（`rag/fusion.py`）
 
 ```python
-MAX_RETRY = 1   # agent/nodes.py
-
-def route_after_grading(state):
-    if state["relevant_documents"]:
-        return "build_tool_message"   # 出口 1：找到了
-    if state["retry_count"] < MAX_RETRY:
-        return "rewrite_query"        # 继续循环
-    return "build_tool_message"       # 出口 2：重试次数用完
+for source, documents in ranked_lists.items():          # dense / sparse
+    for rank, doc in enumerate(documents, start=1):
+        scores[chunk_id] += 1.0 / (k + rank)             # k = RRF_K = 60
 ```
 
-`retry_count` 每 Rewrite 一次加 1，并且只在 Agent 发起一个**新的** tool_call 时重置为 0。所以每次检索请求最多 Rewrite `MAX_RETRY` 次。
+Cosine 的取值是 0~1，BM25 是 0~十几且没有上界。如果用 `0.7 * dense + 0.3 * bm25` 直接加权，结果主要由 BM25 的量纲决定。RRF 只看名次：两路都排在前面的文档得分最高，只出现在一路里的文档也能拿到 `1/(k+rank)`。
 
-Agent Loop 的出口由 LLM 决定（不再产生 tool_call），Rewrite Loop 的出口则由**代码中的计数器**保证。LangGraph 的 `recursion_limit=25` 只是最后一道安全网。
-
-## 8. `rewrite → retrieve` 为什么构成一个 LangGraph Loop
+## 6. Reranker（`rag/reranker.py`）
 
 ```python
-builder.add_edge("retrieve", "grade_documents")                         # ①
-builder.add_conditional_edges("grade_documents", route_after_grading,
-                              ["build_tool_message", "rewrite_query"])  # ②
-builder.add_edge("rewrite_query", "retrieve")                           # ③
+rerank(query, documents, top_k=5) -> list[RerankResult(document, rerank_score)]
 ```
 
-① → ② 选择 `rewrite_query` → ③ 回到 `retrieve`，三条边首尾相接形成一个环。
+- 模型：`BAAI/bge-reranker-base`，中英双语 Cross-Encoder，通过 `fastembed` 以 ONNX Runtime 在本地 CPU 上运行，不需要 GPU，也不需要 PyTorch。
+- Embedding 是 Bi-Encoder：query 和文档分别编码，再计算相似度。Cross-Encoder 把 `(query, document)` 拼成一个输入，能看到两者逐词的交互，所以排序更准；代价是每个候选都要跑一次模型，只适合对 RRF Top N 做精排。
+- 模型输出的是 logit，经过 sigmoid 映射到 `[0, 1]`，作为 `rerank_score` 交给 Gate 使用。
+- 要换模型，实现同样签名的 `rerank()` 并在 `get_reranker()` 里返回即可（见 `Reranker` Protocol）。
 
-LangGraph 的 Graph 本来就允许有环，并不是 DAG。每走一圈，State 中的 `retrieval_query`、`documents`、`relevant_documents`、`retry_count` 都会被更新，下一圈的路由函数读取的是**新的 State**。这就是"循环"在 LangGraph 中的含义：**同一组节点 + 不断变化的 State + 条件边决定是否继续**。
+## 7. Retrieval Gate（`rag/gate.py`）与 LLM Grader 职责变化
 
-## 9. 为什么最终仍然需要 ToolMessage
+```text
+top1 = 最高 rerank_score
 
-Agent Node 和 LLM 交互的唯一通道是 `messages`。
+top1 ≥ HIGH_CONFIDENCE_THRESHOLD (0.9)        → HIGH   ：score ≥ HIGH 的文档直接进入 ToolMessage，不调用 LLM
+LOW ≤ top1 < HIGH                              → MEDIUM ：score ∈ [LOW, HIGH) 的文档交给 LLM Grader 逐个判断
+top1 < LOW_CONFIDENCE_THRESHOLD (0.15) 或为空   → LOW    ：直接 Query Rewrite；重试次数用完则返回"没找到"
+```
 
-- LLM 上一轮输出了一条带 `tool_calls` 的 AIMessage，OpenAI 协议规定：下一次请求中，这条 AIMessage 后面**必须**紧跟与每个 tool_call 对应的 ToolMessage，否则接口会直接报错。
-- 从 LLM 的视角看，它只是"调用了一次 `search_knowledge_base`，拿到了结果"。中间的 Grade / Rewrite / Retry 对它是透明的。
-- 所以 Workflow 的最终产物必须"翻译"回 ToolMessage，Agent 才能基于它生成最终回答。这就是 `build_tool_message_node` 存在的意义，最终答案仍然由 Agent Node 生成。
+> **当前阈值仅为 Demo 初始值**，来自本仓库这个小知识库在 bge-reranker-base 上观察到的分数分布：明确问题 top1 ≥ 0.98，模糊问题在 0.17~0.86，跑偏或知识库里没有的问题 ≤ 0.12。它们没有普适性，换语料、换模型都要重新调。**正式系统应根据 Eval Dataset 的分数分布调参。**
 
-## 10. ToolMessage 的 `tool_call_id` 为什么必须和原始 tool call 对应
+| | Version 2 | Version 3 |
+|---|---|---|
+| 谁来判断相关性 | **每一次检索的每一个文档**都调用 LLM Grader | Reranker 分数先过 Gate；**只有 MEDIUM** 的文档才调用 LLM Grader |
+| LLM Grader 调用量 | Top-K 个 / 每次检索 | 实测 24 条评测 query 中只有 3 条请求触发了 Grader |
+| Query Rewrite 触发 | Grader 判定 0 个相关 | Gate 判为 LOW，或者 MEDIUM 时 Grader 判定 0 个相关 |
 
-AIMessage 中的每个 tool_call 都有一个唯一 `id`（如 `call_abc123`），ToolMessage 通过 `tool_call_id` 声明"我是哪个 tool_call 的结果"。
+这体现的是一种分工：**确定性的专用模型（Cross-Encoder）负责主路径，LLM 只处理边界上的语义判断。** 高分直接放行、低分直接重写，两头都省掉了 LLM 调用的延迟和成本。中间那一段是 Reranker 自己也拿不准的区间，才交给 LLM 判断。
 
-- 协议层面：`tool_call_id` 对不上，OpenAI 兼容接口会报错（"tool_call_id ... not found"）；
-- 语义层面：一条 AIMessage 可以有多个 tool_call，`tool_call_id` 是 LLM 把结果和请求对应起来的唯一依据。
-
-Version 1 中 `tool_node` 当场就能拿到 `tool_call["id"]`。Version 2 中 ToolMessage 要经过 `retrieve → grade → rewrite → retrieve → grade` 好几个节点后才生成，所以 `retrieve_node` 第一次进入时必须先把 id 存进 `pending_tool_call_id`，`build_tool_message_node` 最后再取出来使用。
-
-> 为了让 `pending_tool_call_id` 只需要保存一个值，`bind_tools(tools, parallel_tool_calls=False)` 要求 LLM 每次只发起一个 tool_call。
+`MAX_RETRY = 1` 继续作为 Stop Condition。`retry_count` 只在 Agent 发起新的 tool_call 时重置，Rewrite Loop 不会无限循环。
 
 ---
 
-## 11. 一次完整请求经过的 Node（Case 3，发生 Rewrite 时）
+## 8. Observability（`observability/metrics.py`）
 
-```mermaid
-sequenceDiagram
-    participant U as main.py run()
-    participant A as agent
-    participant RT as retrieve
-    participant G as grade_documents
-    participant RW as rewrite_query
-    participant B as build_tool_message
+只用 `time.perf_counter()`。每个请求有一个 `RequestMetrics`，记录两类数据：
 
-    U->>A: graph.invoke({"messages": [HumanMessage]})
-    A->>A: LLM → AIMessage(tool_calls=[search_knowledge_base(query)])
-    A->>RT: route_after_agent → "retrieve"
-    RT->>RT: 新 tool_call：保存 pending_tool_call_id、original query，retry_count=0
-    RT->>G: documents（2 个）
-    G->>G: 逐个 Grader → relevant_documents = []
-    G->>RW: route_after_grading → "rewrite_query"（0 < MAX_RETRY）
-    RW->>RW: retrieval_query = rewritten query，retry_count = 1
-    RW->>RT: rewrite_query → retrieve（Loop）
-    RT->>RT: 使用 rewritten retrieval query 检索
-    RT->>G: documents（2 个）
-    G->>G: relevant_documents = [Redis 文档]
-    G->>B: route_after_grading → "build_tool_message"
-    B->>A: ToolMessage(content=过滤后的 Context, tool_call_id=pending_tool_call_id)
-    A->>A: LLM → AIMessage(最终答案)
-    A-->>U: route_after_agent → END
+- **stages**：阶段耗时，由 `with timer("dense_retrieval"):` 记录。同一阶段可以执行多次（Rewrite 后会再检索一次），报告显示总和和次数，例如 `(x2)`。
+- **marks**：时间点。TTFT、total 由两个时间点相减得到，**不是各阶段相加**。
+
+| 指标 | 开始 | 结束 | 代码位置 |
+|---|---|---|---|
+| `agent_decision` | Agent 发起产出 tool_call 的那次 LLM 请求 | 该请求的流结束 | `agent_node` |
+| `hybrid_retrieval` | 进入 `retrieve()` | RRF 完成（包含下面 4 项的墙钟时间） | `rag/pipeline.py` |
+| `query_embedding` | 调用 Embedding API | 拿到 query 向量 | `dense_retriever.embed_query` |
+| `dense_retrieval` | 向 Qdrant 发起 dense 查询 | 返回结果 | `dense_retriever.dense_search` |
+| `sparse_retrieval` | 开始 jieba 分词 | Qdrant sparse 查询返回 | `sparse_retriever.sparse_search` |
+| `rrf_fusion` | 开始融合 | 融合排序完成 | `rag/pipeline.py` |
+| `rerank` | Cross-Encoder 开始打分 | 排序截断完成 | `rag/reranker.rerank` |
+| `retrieval_gate` | 读取 rerank_score | 得到 HIGH / MEDIUM / LOW | `rag/gate.py` |
+| `llm_grader` | 第一个 Grader 请求发出 | 最后一个 Grader 请求返回 | `grade_documents_node` |
+| `query_rewrite` | Rewrite 请求发出 | 返回新 query | `rewrite_query_node` |
+| `build_tool_message` | 开始拼 Context | ToolMessage 构造完成 | `build_tool_message_node` |
+| `final_llm` | 最终回答的 LLM 请求发出 | 该请求的最后一个 chunk | `agent_node` |
+| `model_ttft` | `final_llm_start` | `final_first_token`：该请求的第一个文本 token | `agent_node` |
+| `generation` | `final_first_token` | `final_llm_end` | `agent_node` |
+| `e2e_ttft` | `request_start`：`main.ask()` 收到 Query | `first_visible_token`：第一个回答 token **打印到终端之后** | `main.ask` |
+| `total` | `request_start` | `request_end`：Graph 流结束 | `main.ask` |
+
+报告里 `skipped` 表示**这个阶段没有执行**；执行了但很快会显示具体数值，例如 `0.012 ms`。两者不会混淆。
+
+`total` 是墙钟时间。现在各阶段是串行的，各项加起来接近 `total`，但两者的定义不同。以后如果 Dense 和 Sparse 并行执行，各项相加会**大于** `total`，所以代码里从不用"阶段相加"来计算 `total`。
+
+### TTFT：Model TTFT 与 E2E TTFT
+
+```text
+request_start ──agent_decision(tool_call)──retrieval──rerank──[grader]──[rewrite]──final_llm_start──prefill──first token──decode──end
+│                                                                                  │                        │
+│                                                                                  └────── model_ttft ──────┤
+└────────────────────────────────────────── e2e_ttft ───────────────────────────────────────────────────────┘
 ```
+
+- **Model TTFT** = `first_final_token_time − final_llm_start_time`：只衡量最终回答那一次 LLM 请求的排队和 prefill 时间。
+- **E2E TTFT** = `first_visible_answer_token_time − request_start_time`：用户从提问到看到第一个回答字，中间所有环节都算在内，包括 Agent 路由、检索、Rerank、Grader、Rewrite 和最终 prefill。
+
+**怎样保证 Agent 的 tool_call 不被计入 TTFT：**
+
+1. 一次 LLM 调用要看到输出才知道是 tool_call 还是回答。`agent_node` 对每次调用都先记录 `call_start`，再根据**第一个有意义的 chunk** 分类：带 `tool_call_chunks` 的是内部决策，耗时记为 `agent_decision`，不产生任何标记；带文本 `content` 的才是最终回答，这时才把 `call_start` 记为 `final_llm_start`，并把当前时刻记为 `final_first_token`。
+2. 只有被判为回答的文本 chunk，才会通过 LangGraph 的 `get_stream_writer()` 推送到 `stream_mode="custom"`。tool_call chunk、Grader 和 Rewrite 的 structured output 永远不会进入这条流。`main.py` 只消费这条流，看到第一个 token **打印出来之后**才记录 `first_visible_token`。
+3. 兜底：如果模型先输出一段文字、再发起 tool_call，`agent_node` 会发出 `retract` 事件，并清除已记录的 TTFT 标记，等真正的最终回答再重新记录。
+
+Case 1（直接回答）中没有单独的 `agent_decision`：决策和回答是同一次 LLM 调用，报告里显示 `n/a`，耗时都在 `final_llm` 里。
+
+---
+
+## 9. 测试 Case（`python main.py`，以下为一次真实运行的输出摘录）
+
+**Case 1：普通问题**：`Agent → Direct Answer`，不进入 RAG
+
+```text
+[Agent] LLM called
+[Assistant] Python 是一门强调代码可读性和简洁语法的高级通用编程语言……
+hybrid_retrieval / rerank / llm_grader ... skipped
+final_llm 1196.7 ms | model_ttft 678.5 ms | e2e_ttft 680.0 ms | total 1199.3 ms
+```
+
+**Case 2：清晰的知识库问题**：`Hybrid → Rerank → HIGH → ToolMessage`，**不调用 LLM Grader**
+
+```text
+[Agent] tool_call: search_knowledge_base args={'query': 'Redis 集群代号和用途'}
+[Retrieve] dense  top: redis_001(0.681), redis_003(0.447), rag_003(0.424), ...
+[Retrieve] sparse top: redis_001(9.829), rag_003(4.285), redis_003(2.392), ...
+[Retrieve] rrf    top: redis_001(0.033), redis_003(0.032), rag_003(0.032), ...
+[Rerank]   top: redis_001(1.000), rag_003(0.132), redis_002(0.034), ...
+[Gate] HIGH (top rerank_score=1.000, high>=0.9, low<0.15) → pass 1 documents
+[Assistant] 根据知识库，我们团队的 Redis 集群代号是「青鸟」（Bluebird）……
+agent_decision 920.0 | hybrid_retrieval 356.3 | rerank 313.2 | llm_grader skipped | model_ttft 887.0 | e2e_ttft 2480.8 | total 2821.7 (ms)
+```
+
+**Case 3：模糊问题**："我们这边一般怎么上线？" → `MEDIUM → LLM Grader`
+
+```text
+[Rerank]   top: deploy_001(0.883), deploy_003(0.169), deploy_002(0.098), ...
+[Gate] MEDIUM (top rerank_score=0.883) → 2 documents to LLM Grader
+[Grader] deploy_001: relevant / deploy_003: irrelevant
+```
+
+**Case 4：检索被带偏**："Agent 应用里用户会话存在哪个组件" → `LOW → Rewrite → Retry → MEDIUM → Grader`
+
+```text
+[Rerank]   top: redis_001(0.147), agent_001(0.022), ...
+[Gate] LOW (top rerank_score=0.147)
+[Rewrite] rewritten query: Agent 应用用户会话数据存储在哪个内部组件
+[Retry] 1 / 1
+[Rerank]   top: redis_001(0.459), ...
+[Gate] MEDIUM → [Grader] redis_001: relevant
+hybrid_retrieval (x2) | rerank 832.8 ms (x2) | llm_grader 575.9 | query_rewrite 1399.1 | e2e_ttft 4999.5 | total 5286.7 (ms)
+```
+
+**Case 5：知识库中不存在**（Kafka）→ `LOW → Rewrite → MEDIUM → Grader(0) → Max Retry → "没找到"`
+
+**关于随机性**：Agent 写进 tool_call 的 query、Rewrite 生成的 query 和 Grader 的判断都来自 LLM，每次运行可能不同，所以 Case 3、4 不保证每次都走同一条路径。例如另一次运行中，Case 3 的 Agent 把 query 写成了"发布流程 上线 灰度 回滚"，top1 = 0.937，直接走了 HIGH。代码里没有为了让某个 Case 固定通过而写任何业务判断。
+
+---
+
+## 10. Offline Evaluation（`python eval/run_eval.py`）
+
+`eval/dataset.json`：
+
+```json
+[{"query": "团队 Redis 集群主要用于什么？", "relevant_chunk_ids": ["redis_001"]}, ...]
+```
+
+- `Recall@K = |relevant ∩ TopK| / |relevant|`
+- `MRR = mean(1 / 第一个正确结果的排名)`，Top N 中没有命中记为 0
+
+评测会分别计算 dense、sparse、hybrid_rrf、hybrid_rerank 四个阶段的排序，可以直接看出每一步带来了什么。端到端部分会把每条 query 都走一遍完整 Agent Graph，统计 e2e latency、TTFT 和 Gate 分布。
+
+一次实际运行的结果（Embedding / Chat 为公网 API，Reranker 在本机 CPU 上运行）：
+
+```text
+stage              Recall@1   Recall@3   Recall@5      MRR
+dense                 1.000      1.000      1.000    1.000
+sparse                0.917      0.958      0.958    0.938
+hybrid_rrf            0.958      0.958      0.958    0.965
+hybrid_rerank         0.958      1.000      1.000    0.979
+
+Retrieval Latency (ms)   avg     p50     p95
+hybrid_retrieval       155.2   127.7   295.1
+rerank                 354.4   398.0   421.7
+retrieval_total        509.6   529.2   616.2
+
+End-to-End (ms)          avg     p50     p95      max
+total                 5617.8  2869.6  6832.1  62474.3
+e2e_ttft              4795.9  2224.4  5691.7  62056.1
+model_ttft            3112.7   586.8  1030.8  60472.7
+```
+
+怎么读这组数据：
+
+- 语料很小，Dense 已经满分，Hybrid 在这个数据集上**没有提升**，RRF 还被 BM25 的一次排序失误拉低了 Recall@1。这个结果符合预期：Hybrid 的价值在大语料、专有名词多的场景下才明显。数据集越小，越要避免把 Demo 结果外推到生产。
+- avg 被一次 60 s 的 Chat API 超时重试拉高（`timeout=60, max_retries=2`），这次超时就是 `model_ttft` 的 max 值。p50 更能代表典型情况，这也是延迟统计要看分位数、不能只看平均值的原因。
+
+> 数据集只有 24 条，语料只有 19 个 chunk，**p95 仅用于 Demo，不具备生产统计意义**。延迟里包含公网调用 Embedding / Chat API 的网络波动。
 
 ---
 
 ## 小技巧
 
-查看 LangGraph 实际编译出的图结构（import 时会执行索引阶段，需已配置 `.env`）：
+查看 LangGraph 实际编译出的图（需要 Qdrant 已启动）：
 
 ```python
 from agent.graph import graph
