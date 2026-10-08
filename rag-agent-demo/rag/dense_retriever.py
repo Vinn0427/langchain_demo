@@ -22,6 +22,8 @@ def get_embeddings() -> OpenAIEmbeddings:
         base_url=config.EMBEDDING_BASE_URL,
         chunk_size=config.EMBEDDING_BATCH_SIZE,
         check_embedding_ctx_length=False,  # 直接发送原始文本，兼容非 OpenAI 的兼容服务商
+        timeout=config.API_TIMEOUT,        # 不设置时为 openai SDK 默认的 600 秒
+        max_retries=config.API_MAX_RETRIES,
     )
 
 

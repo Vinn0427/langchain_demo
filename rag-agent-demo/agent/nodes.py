@@ -38,8 +38,8 @@ llm = ChatOpenAI(
     api_key=config.OPENAI_API_KEY,
     base_url=config.OPENAI_BASE_URL,
     temperature=0,
-    timeout=60,                                # 最多等 60 秒，超时报错，不再无限等待
-    max_retries=2,                             # 超时后自动重试
+    timeout=config.API_TIMEOUT,                # 每次尝试最多等 5 秒（见 config.py）
+    max_retries=config.API_MAX_RETRIES,        # 超时 / 可重试错误时最多再试 3 次
     extra_body={"enable_thinking": False},     # 关闭 Qwen3 的深度思考
 )
 

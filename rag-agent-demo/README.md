@@ -401,7 +401,7 @@ model_ttft            3112.7   586.8  1030.8  60472.7
 怎么读这组数据：
 
 - 语料很小，Dense 已经满分，Hybrid 在这个数据集上**没有提升**，RRF 还被 BM25 的一次排序失误拉低了 Recall@1。这个结果符合预期：Hybrid 的价值在大语料、专有名词多的场景下才明显。数据集越小，越要避免把 Demo 结果外推到生产。
-- avg 被一次 60 s 的 Chat API 超时重试拉高（`timeout=60, max_retries=2`），这次超时就是 `model_ttft` 的 max 值。p50 更能代表典型情况，这也是延迟统计要看分位数、不能只看平均值的原因。
+- avg 被一次偶发的 Chat API 卡顿拉高：第 15 条 query 的最终回答等首 token 等了 60.47 s，这就是 `model_ttft` 的 max 值。同一条 query 复测 10 次都在 0.75 s 以内。当时配置是 `timeout=60`，一次卡顿最长可以等满一分钟；现在已改为 `API_TIMEOUT=5, API_MAX_RETRIES=3`（见 `config.py`）。p50 更能代表典型情况，这也是延迟统计要看分位数、不能只看平均值的原因。
 
 > 数据集只有 24 条，语料只有 19 个 chunk，**p95 仅用于 Demo，不具备生产统计意义**。延迟里包含公网调用 Embedding / Chat API 的网络波动。
 

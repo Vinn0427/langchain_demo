@@ -29,6 +29,15 @@ EMBEDDING_API_KEY = os.getenv("EMBEDDING_API_KEY") or OPENAI_API_KEY
 EMBEDDING_BASE_URL = os.getenv("EMBEDDING_BASE_URL") or OPENAI_BASE_URL
 EMBEDDING_BATCH_SIZE = _int("EMBEDDING_BATCH_SIZE", 10)  # 部分兼容服务商单次最多 10 条
 
+# ---- API 超时与重试（Chat 和 Embedding 共用）----
+# timeout：每一次尝试的 httpx 超时（connect / read / write / pool 各 5 秒），不是整次调用的总上限。
+#   流式请求中它限制的是"等响应头（≈ 首 token）"和"两个 chunk 之间的间隔"。
+# max_retries：连接失败、超时、408/409/429/5xx 时由 openai SDK 自动重试，最多再试 3 次（共 4 次），
+#   重试前指数退避约 0.5s / 1s / 2s。最坏总耗时 ≈ 4 × 5s + 3.5s ≈ 23.5s。
+#   流式输出开始之后中途断开不会重试。
+API_TIMEOUT = _float("API_TIMEOUT", 5)
+API_MAX_RETRIES = _int("API_MAX_RETRIES", 3)
+
 # ---- Qdrant ----
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "rag_demo_v3")
