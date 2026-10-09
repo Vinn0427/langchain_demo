@@ -15,6 +15,7 @@ from qdrant_client import QdrantClient
 
 import config
 
+#Qdrant计算 BM25 是用“词表+稀疏向量",如果用 ES ，就是建倒排索引
 DENSE_VECTOR = "dense"
 SPARSE_VECTOR = "bm25"
 
