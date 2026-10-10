@@ -6,9 +6,243 @@
 |---|---|---|
 | Version 1 | `Agent ↔ Tool` | Tool Calling、Agent Loop |
 | Version 2 | `Retrieve → Grade → Rewrite → Retry` | State、Node、Conditional Edge、Loop、Stop Condition |
-| **Version 3（当前）** | `Hybrid Retrieval → RRF → Rerank → Confidence Gate → Streaming → Observability → Evaluation` | RAG Engineering、Retrieval Quality、Latency Analysis、Evaluation |
+| Version 3 | `Hybrid Retrieval → RRF → Rerank → Confidence Gate → Streaming → Observability → Evaluation` | RAG Engineering、Retrieval Quality、Latency Analysis、Evaluation |
+| **Version 4（当前）** | `Incremental Indexing & Reliability` | Timeout 定位 / Retry / Deadline、Chunk Quality、增量索引、Query Understanding、Multi-Tool、Structured Contract、No-Answer、Source Tracking、Regression |
+
+> V4 的说明见下方「Version 4」一节；其后的第 1~10 节是 V3 文档（仍然有效的部分未改动，Collection 名、Eval 入口等已被 V4 取代处以 V4 一节为准）。
 
 核心原则：**LangGraph 负责业务流程编排；RAG 模块内部负责检索 pipeline。**
+
+---
+
+## Version 4：Incremental Indexing & Reliability
+
+### 运行
+
+```bash
+docker compose up -d
+python scripts/build_index.py                # 增量；fingerprint 变化时自动 Blue-Green（新 collection → eval gate → alias 原子切换）
+python main.py                               # 内置 Case（含多轮 / 5 个 Tool / No-Answer / Multi-Tool）
+python main.py --chat                        # 交互式多轮
+python main.py --mode v3_agent "Redis 怎么扩容？"   # V3 Routing 仍可用
+python eval/run_regression.py [--ab]         # 统一 Regression
+python scripts/reproduce_timeout.py          # 复现 V3 的 60s timeout + V4 定位
+python scripts/verify_incremental.py         # 增量索引正确性验证（独立测试 collection）
+```
+
+### 新增 / 修改的模块（只做了最小必要的目录调整）
+
+```text
+llm/client.py              统一 LLM / Embedding 调用：分阶段 timeout、Retry Policy、Deadline、逐 attempt Trace、
+                           Structured Output 单次调用 + 同一 raw response 容错解析、httpx 层故障注入
+observability/tracing.py   AttemptRecord（request_id / call_id / phase / attempt / first_token / status / retry…）→ logs/trace.jsonl
+observability/versions.py  运行版本（chat / embedding / reranker / BM25 / chunk / prompt version）写进 Eval Report
+query/understanding.py     Query Understanding（Contextual Rewrite + Intent + Entity + Candidate Tools，一次 LLM 调用）
+query/rewrite.py           Retrieval Rewrite（只在检索失败后使用）
+query/schema.py            QueryUnderstandingResult / RetrievalRewriteResult / GradeResult
+tools/registry.py          5 个 Tool 的边界说明、Args Schema、动态 Binding、Validation、安全执行
+tools/schemas.py           ToolResult Contract + 错误码
+tools/document.py          get_document / get_chunk / list_documents（Qdrant 精确查询）
+tools/index_status.py      get_index_status
+rag/chunking.py            按标题层级切分、section_path、raw_text / retrieval_text、A/B/C、Chunk Analysis
+rag/manifest.py            SQLite Index Manifest
+rag/indexing.py            增量 Indexing、Pipeline Fingerprint、冻结 avgdl、Blue-Green + Eval Gate
+agent/nodes.py / graph.py  query_understanding / agent / tool_dispatch + V3 的 retrieve / grade / rewrite / build_tool_message
+eval/*                     retrieval / chunk / query / tool / regression
+```
+
+### Graph
+
+```text
+START ─(query_understanding)→ query_understanding ─(单 Tool 且参数确定)→ tool_dispatch
+  │                                    └────────(MULTI_TOOL / 低置信度)──→ agent
+  └──(v3_agent)──────────────────────────────────────────────────────→ agent
+agent ─(无 tool_call)→ END
+  └─(1..N 个 tool_call)→ tool_dispatch ─(search_knowledge_base)→ retrieve → Gate → [grade] → [rewrite] → build_tool_message ─┐
+                             ↑  └─(其余 Tool 在 dispatch 内顺序执行；全部 tool_call 都有 ToolMessage 后)→ agent         │
+                             └────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+7 个 Node，按职责划分：Hybrid / RRF / Rerank / Gate 仍在 `retrieve` 一个 Node 内；4 个确定性 Tool 都在 `tool_dispatch` 内执行。
+
+### 1. Timeout 定位（`scripts/reproduce_timeout.py`，日志 `eval/reports/timeout_reproduction.log`）
+
+V3 的 60.47s 发生在 **final_answer 的首 token 等待**（README V3 记录：`model_ttft` max = 60472.7 ms）。V3 当时 `timeout=60, max_retries=2`，openai SDK 在内部静默重试，日志里只有一次 60s 的调用。
+
+在 httpx transport 层注入"请求挂起直到 read timeout"重放 V3 配置（真实走 `httpx.ReadTimeout → openai.APITimeoutError` 路径）：
+
+```text
+[V3 view]   final_llm：model_ttft=60971 ms  total=61462 ms   ← 调用方只能看到这两个数
+[V3 hidden] SDK 实际发出 HTTP 请求 2 次：第 1 次 60s read timeout → APITimeoutError → 静默重试；第 2 次 ≈971 ms 首 token
+```
+
+结论：**phase = final_answer，attempt 1，error_type = APITimeoutError（底层 httpx.ReadTimeout，等首 token 的读超时），latency ≈ 60s，随后 attempt 2 成功**——与 V3 实测的 "60.47s 后正常输出" 吻合。V3 当时没有逐 attempt 记录，所以"服务端为什么没响应"本身无法从历史日志确认，只能确认它是 read timeout + SDK 重试。
+
+V4 同样的故障，trace 直接定位：
+
+```text
+[LLM] req=3cbc6261 call=3cbc6261-03 phase=final_answer attempt=1 status=timeout latency=10007ms timeout=10.0s error=APITimeoutError → retry (reason=timeout)
+（attempt 2 成功：model_ttft 10898 ms − attempt 1 的 10007 ms ≈ 891 ms 首 token；请求 total 15337 ms）
+```
+
+其他已验证场景：`query_understanding` 429 → `rate_limit` → retry 成功；`agent_decision` 500 → `server_error` → retry 成功；`query_rewrite` 连接失败 → `connection_error` → retry 成功；`REQUEST_DEADLINE=12` 且 final_answer 连续挂起 → attempt 1 的 timeout 被自动压缩到 9.59s、不再发起 attempt 2，**请求在 12009 ms 结束**并返回明确的错误提示。
+
+| | 修改前（V3 配置 + 首 token 挂起） | 修改后（V4 默认） |
+|---|---|---|
+| 单次故障的 max latency | 61.5 s（实测重放）；V3 eval 历史 max 62.5 s | 15.3 s（10s timeout + retry） |
+| 最坏情况 | 60s × 3 次 attempt ≈ 180 s | 被 `REQUEST_DEADLINE=30s` 截断（实测 12s deadline 时 12.0 s） |
+| 正常情况 p95（V3 Eval 24 条 / 同模型） | total p95 3747.9 ms，max 6803.9 ms（`eval/reports/v3_baseline_eval.log`） | 见下方 Regression |
+
+**分阶段 Timeout（`config.py`）**：QU 12s / Agent Decision 12s / Grader 5s / Rewrite 5s / Final Answer 10s / Embedding 5s / Tool 5s / Request Deadline 30s。初始值 ≈ 当前 Provider 实测 p95 的数倍；**中途切换到 qwen3.8-flash 后 QU 单次实测 2.0~7.9s，因此 QU / Agent Decision 从 8s 调到 12s**。这些值没有普适性。
+
+**Retry Policy**：只重试 `timeout / connection_error / 429（非 insufficient_quota）/ 500·502·503·504`，`LLM_MAX_ATTEMPTS=2`；`parse_error / validation_error / Grader=false / 检索为空` 不触发新请求；流式输出已产出 token 后中断记为 `stream_interrupted`，不重试。SDK `max_retries=0`。
+
+**Deadline**：每次 attempt 的 timeout = `min(phase_timeout, remaining - reserve)`，不足 1s 不发请求（`deadline_exceeded`）。预算不足时：Grader 跳过（fallback：rerank_score ≥ 0.5 放行）、Retrieval Rewrite 跳过、Agent 不再绑定 Tool。
+
+### 2. Structured Output 双调用
+
+V3：`with_structured_output(method="function_calling")` 在当前模型上经常**不调用 function、直接输出纯文本**（本次实测 Rewrite 3/3 次 `parsed=None`，见探针），然后 V3 再 `llm.invoke()` 一次 → 双调用。
+
+V4：`structured_call()` 改用 `response_format=json_schema`（实测 3/3 直接合法 JSON），一次请求 → 严格解析 → 失败则对**同一个 raw response** 依次尝试 tool_call args / 去 code fence / 截取 `{…}` / 单字段纯文本；仍失败且有预算才允许 re-ask（`STRUCTURED_MAX_REASK=1`）。每次 structured 调用记录 `llm_requests`。Regression 中 `structured_reask_count = 0`，**每次 Rewrite 都是 llm_requests=1，双调用已消除**。
+
+### 3. Chunk Strategy（`eval/run_chunk_eval.py`，`eval/reports/chunk_strategy.log`）
+
+切分改为按 `##` / `###` 标题层级（chunk 边界在 A/B/C 三种策略下完全相同，只有 `retrieval_text` 不同）；Payload 增加 `raw_text / retrieval_text / document_title / section_path / content_hash`。`retrieval_text` 用于 Dense / BM25 / Reranker，**交给 LLM 的 Context 只用 `raw_text`**。新增 `redis_ops.md`、`mysql_ops.md`（多级标题，同主题不同答案）。
+
+Chunk Analysis（31 chunks，jieba token）：avg 53.8 / p50 52 / p95 96.5 / min 16 / max 123；too_short(<32) = **16.1%**（`mysql_ops_002/004/005/006`、`redis_ops_003`，都是一两句话的 `###` 小节）；too_long(>400) = 0。**按 `###` 切分的运维文档确实偏碎**，C 策略把标题路径拼进 retrieval_text 后 too_short 降到 9.7%。
+
+Retrieval Eval（60 条有标注 + 5 条无答案；同一数据集、三个独立 collection）：
+
+| stage | metric | A raw | B title+section | C title+path |
+|---|---|---|---|---|
+| dense | R@1 / R@3 / R@5 / MRR | 0.844 / 0.925 / 0.950 / 0.935 | 0.886 / 0.964 / 0.983 / 0.969 | 0.886 / 0.975 / 0.983 / 0.969 |
+| sparse | R@1 / R@3 / R@5 / MRR | 0.764 / 0.894 / 0.917 / 0.868 | 0.842 / 0.928 / 0.928 / 0.917 | 0.847 / 0.933 / 0.933 / 0.925 |
+| hybrid_rrf | R@1 / R@3 / R@5 / MRR | 0.819 / 0.931 / 0.972 / 0.922 | 0.869 / 0.956 / 0.978 / 0.954 | 0.869 / 0.956 / 0.983 / 0.954 |
+| hybrid_rerank | R@1 / R@3 / R@5 / MRR | 0.797 / 0.933 / 0.969 / 0.903 | 0.864 / 0.956 / 0.961 / 0.939 | **0.869 / 0.961 / 0.978 / 0.953** |
+
+按类别（hybrid_rerank MRR）：`same_topic` A 0.840 → B/C 1.000；`ambiguous` A 0.750 / B 0.778 / C 1.000；`v3_basic` 三者都是 0.979（V3 数据集确实太容易，拉不开差距）。
+
+**选择 C**：事先固定的规则是 `max(hybrid_rerank MRR, R@1, hybrid_rrf MRR)`，C 在 hybrid_rerank 的 4 个指标上都最高。差异主要来自 `redis_ops` / `mysql_ops` 里"扩容 > 扩容触发条件"这类同名小节——没有上级标题时 A 无法区分 Redis 和 MySQL。`exact_id` 类（query 里写 `redis_003`）三种策略都很差，这正是需要 `get_chunk` 精确查找、而不是靠向量检索的原因。
+
+### 4. Incremental Indexing（`scripts/verify_incremental.py`，19/19 checks passed）
+
+| 场景 | 实测 |
+|---|---|
+| 第一次 | 9 文档 → 31 chunk，31 embedded（9 次 Embedding 请求） |
+| 第二次无修改 | **0 chunking / 0 embedding / 0 Embedding 请求 / 0 写入**，9 个文件 `unchanged → skipped`，3.3 ms |
+| 修改 `redis_ops.md`（改 1 句 + 新增 1 小节） | 只处理该文件：**7 个 chunk 重新 chunk，2 个 embedding，5 个按 content_hash 复用旧向量（逐位相同）**，其他 8 个文件 skip |
+| 删除 `api.md` | Qdrant 中 api 的 2 个 point → 0，manifest 同步删除 |
+| 新增 `faq.md` | 1 chunk → 1 embedding → upsert → manifest |
+| fingerprint 变化、file_hash 不变 | 9/9 文件重新处理（不 skip）；目标 collection 名随 fingerprint 变化 → `build()` 走 Blue-Green |
+
+Manifest（SQLite，`index_state/manifest.db`）：`documents(collection, document_id, source_path, file_hash, pipeline_fingerprint, chunk_ids, token_count, indexed_at)` + `collections(strategy, pipeline_fingerprint, fingerprint_detail, bm25_avgdl, status, revision, eval_summary…)`。
+
+**Pipeline Fingerprint** = sha256 of：`embedding_model, embedding_dimension, chunk_strategy_version, chunk_enrichment_mode, splitter_config{split_level, max_chars, overlap_chars}, retrieval_text_version, bm25{version, k1, b, tokenizer(jieba 版本 + lcut_for_search + lower), stopwords_md5, token_id=md5-32bit}, sparse_representation`。
+
+### 5. Sparse Incremental Correctness
+
+| 组成 | 全局依赖？ | 问题 |
+|---|---|---|
+| jieba / 停用词 / token_id | 否 | 变化时进 fingerprint |
+| TF 饱和（k1） | 否 | — |
+| 长度归一化 | **avgdl** | V3 每次全量重算 avgdl；若增量时只给新文档用新 avgdl，新旧 value 不一致 |
+| IDF（Qdrant `modifier=IDF`） | **N、df** | 查询时实时计算，但**实测删除的 point 在 segment vacuum 前仍计入 IDF**；默认 `vacuum_min_vector_number=1000`，小 collection 永远不清理 |
+
+选择方案 A（保留自研 BM25，明确重建条件）：
+1. **avgdl 在 collection 创建时冻结**写入 manifest，所有增量写入沿用（FastEmbed 标准 Bm25 的 `avg_len` 也是固定参数）。每次构建报告 `actual avgdl` 与 drift，超过 20% 提示 `--rebuild`（Blue-Green 全量重建）。
+2. collection 创建时设 `deleted_threshold=0.0001, vacuum_min_vector_number=1`，Indexing 结束等 collection 回到 green。
+3. 验证：增量 collection vs "同一冻结 avgdl 的全量重建"——payload、sparse vector **逐 point 一致**；**65/65 个 query 的 Qdrant BM25 分数完全一致**。对照组（默认 optimizer，写入并删除一批临时 point）：**63/65 个 query 分数不同**。dense 向量 min cos=0.9975：不是增量的问题，而是 Embedding Provider 本身不确定（同一 batch 重复请求 cos≈0.998）。
+
+没有迁移到 FastEmbed Bm25，因此不需要迁移回归；切到 C 策略后 Retrieval Eval 见上表。
+
+### 6. Blue-Green
+
+在线只访问 alias `rag_demo`；物理 collection = `rag_demo_v4_<strategy>_<fingerprint前8位>`。fingerprint 变化 → 新建 collection 全量构建（旧的继续服务）→ Retrieval Eval Gate（hybrid_rerank R@5 ≥ 0.85 且 MRR 不低于当前 0.05 以上）→ 一次 `update_collection_aliases`（delete + create 同一请求，Qdrant 原子执行）→ 旧 collection 标记 `retired` 保留可回滚。实测：`(none) → rag_demo_v4_c_0073c1ee`，gate `R@5=0.9778, MRR=0.9533`。V3 的 `rag_demo_v3` 原样保留未删除。
+
+### 7. Query Understanding（`query/understanding.py`）与两类 Rewrite
+
+```python
+class QueryUnderstandingResult(BaseModel):
+    standalone_query: str
+    intent: Literal["DIRECT", "KNOWLEDGE_SEARCH", "DOCUMENT_LOOKUP", "CHUNK_LOOKUP",
+                    "DOCUMENT_LIST", "INDEX_STATUS", "MULTI_TOOL"]
+    entities: list[str]
+    constraints: list[str]          # 数字 / 时间 / 版本 / 否定条件
+    document_id: str | None
+    chunk_id: str | None
+    topic: str | None
+    candidate_tools: list[str]
+    confidence: float               # [0, 1]
+```
+
+- **Contextual Rewrite**：`query/understanding.py` 的 `PROMPT` + `understand()`，在 `query_understanding_node` 中执行，输入 raw query + 最近 3 轮对话。LLM 输出后再由 `enforce_contract()` 做确定性检查：raw 中的 chunk_id / document_id 必须保留（丢失则补回）、数字 / 否定词丢失则记 violation（单轮时退回 raw）、candidate_tools 只保留已注册 Tool 并与 Intent 默认候选取并集。
+- **Retrieval Rewrite**：`query/rewrite.py` 的 `retrieval_rewrite()`，在 `rewrite_query_node` 中执行；只在 Gate=LOW 或 MEDIUM+Grader 0 相关时触发，输入 standalone_query + 当前检索 Query + 证据摘要 + retry_count，不做 Intent。
+- 第一次检索使用 `standalone_query`（tool_log 中 `query_source=standalone_query`）。
+- 多轮验证：`Redis 怎么部署？` → `那它扩容呢？` → standalone_query = **`Redis 怎么扩容？`** → redis_ops_004 / redis_ops_003。
+- 单 Tool 且参数确定时，QU 直接生成 tool_call（跳过一次 Agent Decision）；MULTI_TOOL / 低置信度交给 Tool Agent。
+
+### 8. Multi-Tool
+
+| Tool | Use when | Do NOT use when |
+|---|---|---|
+| `search_knowledge_base(query)` | 团队系统 / 规范 / 流程 / 运维的模糊知识问题（含知识库可能没有的组件） | 已给 chunk_id、要整篇文档、问有哪些文档、问索引状态、通用常识 |
+| `get_document(document_id, view=full\|outline)` | 明确指定 document_id 或要求整篇 / 全文 / 大纲 | 只是提了 Redis 等主题词的知识问题；引用的是 chunk_id |
+| `get_chunk(chunk_id)` | 明确引用 `<doc>_<3 位数字>` | 没给 chunk_id；不得猜测 ID |
+| `list_documents(topic?)` | 有哪些文档 / 某主题有哪些文档 | 具体知识；chunk 数 / 索引版本 |
+| `get_index_status()` | 索引规模、版本、embedding 模型、chunk 策略、更新时间（不返回任何密钥 / URL） | 具体知识、文档列表 |
+
+- Args 全部是 Pydantic（`extra=forbid`、正则、长度、enum）；执行前 `validate()`，失败返回 `INVALID_ARGUMENT` 的 ToolMessage，不崩溃。
+- `ToolResult{success, data, error_code, message, source_ids, chunk_ids, document_ids, retrieval_status}`；错误码 `INVALID_ARGUMENT / NOT_FOUND / TIMEOUT / DEPENDENCY_ERROR / INTERNAL_ERROR`（+ Loop Safety 的 `DUPLICATE_TOOL_CALL / TOOL_BUDGET_EXCEEDED`）；ToolMessage 只含结构化 JSON，不含 traceback。
+- **Candidate Tool Gating**：Intent → 默认候选（如 INDEX_STATUS → `[get_index_status]`，DIRECT → 不绑定 Tool），每轮 `bind_tools` 只绑定候选。
+- **多个 tool_call**：`tool_dispatch` 维护 `tool_queue` 顺序执行，`search_knowledge_base` 跳入 RAG 子流程后回到 dispatch 继续；`invalid_tool_calls`、被拦截的调用也都有 ToolMessage——不依赖 Prompt 保证协议。实测 `分别看一下 redis_003 和 mysql_002` 一条 AIMessage 中 2 个 get_chunk。
+- **Loop Safety**：`MAX_TOOL_CALLS_PER_REQUEST=4`；同一 Tool + 相同参数第 2 次 → `DUPLICATE_TOOL_CALL` 并停用 Tool；`recursion_limit=60`。
+- Multi-Tool 实测：`Redis 脑裂处理出自哪篇文档？把那篇完整内容给我` → `search_knowledge_base → ToolMessage → Agent → get_document(redis_ops) → ToolMessage → Agent → Final Answer`。
+
+### 9. Context Dedup / No-Answer / Sources
+
+- **Dedup**：`rag/pipeline.dedup_documents()`：chunk_id 去重 + 规范化正文 md5 去重，并跳过本请求中已交给 LLM 的 `used_chunk_ids`。
+- **No-Answer**：`retrieval_status ∈ FOUND / NOT_FOUND / FAILED`。本轮所有 Tool 都是 search 且都是 NOT_FOUND → **不调用 LLM**，固定返回「知识库中没有足够信息支持回答。」（`Kafka ISR 是怎么实现的？`：LOW → Rewrite → LOW → max retry → 固定文案）。检索依赖失败 → 固定的"检索暂时不可用"。
+- **Sources**：最终回答后由代码根据 State 中的 `sources`（只来自真实 ToolResult 的 source_ids）追加 `Sources:`；Prompt 禁止 LLM 写来源。Eval 检查 Sources ⊆ Tool source_ids、正文中的 chunk_id 都出现在 Tool 输出里。
+
+### 10. Routing A/B（v3_agent vs query_understanding）
+
+数据：`eval/tool_dataset.json`（42 条，含 DIRECT / KNOWLEDGE_SEARCH / DOCUMENT_LOOKUP / CHUNK_LOOKUP / DOCUMENT_LIST / INDEX_STATUS / MULTI_TOOL / 错误 document_id / 错误 chunk_id / 易混淆）+ `eval/query_dataset.json`（17 条多轮）。**A/B 在 qwen3.7-flash-2026-07-15 上完成**（`eval/reports/tool_eval_ab_qwen3.7.*`、`query_eval_ab_qwen3.7.*`）；之后 chat 模型被切换为 qwen3.8-flash，Regression 只在新模型上跑默认模式。
+
+| 指标 | v3_agent | query_understanding |
+|---|---|---|
+| Intent Accuracy（tool / query 集） | 0.952 / 0.941 | **1.000 / 1.000** |
+| Candidate Tool Recall | 1.0（绑定全部） | 1.000 |
+| Tool Selection Accuracy | 0.929 | **1.000** |
+| First Tool Accuracy | 0.952 | 1.000 |
+| Tool Argument Valid Rate | 1.000 | 1.000 |
+| Tool Execution Success Rate | 1.000 | 1.000 |
+| Unnecessary / Wrong Tool Rate | 0.024 / 0.048 | 0 / 0 |
+| Multi-Tool Task Success | 0.75 | **1.00** |
+| Expected Args Accuracy | 0.778 | 1.000 |
+| 多轮 Query 正确率（must_contain） | 0.875 | **1.000** |
+| 第一次检索 Recall@5（多轮集） | 0.917 | **1.000** |
+| Direct Query E2E TTFT p50 / p95 | **926 / 1154 ms** | 1681 / 1692 ms |
+| RAG Query E2E TTFT p50 / p95 | **2693** / 4004 ms | 2834 / **3583** ms |
+| Agent Decision（首次）p50 | 956 ms | 735 ms（只在 4 条 MULTI_TOOL 中触发） |
+| Query Understanding p50 / p95 | — | 1618 / 2032 ms |
+
+v3_agent 的典型错误：`那它扩容呢？` 直接回答（没有调用 Tool），`给我 kafka 文档的完整内容` 走了 list_documents + search。
+
+**默认 `ROUTING_MODE=query_understanding`**：准确率全面更高；代价是 DIRECT 问题多一次 LLM 调用（TTFT +~750 ms），RAG 问题 p50 持平（QU 替代了 Agent Decision）、p95 更低。若业务以闲聊为主应重新权衡。
+
+### 11. Regression（`python eval/run_regression.py`）
+
+见 `eval/reports/regression_summary.json` / `regression.log`（结果在下方「Regression 实测」）。
+
+### 12. 剩余问题
+
+1. **QU 本身成为了 TTFT 的固定成本**：每个请求都多一次结构化 LLM 调用（新模型实测 2~8s 波动），DIRECT 问题首字变慢；需要规则 / 小模型预分类或与回答合并的方案。
+2. **Gate 阈值与 avgdl 仍是手工基线**：无答案 query 的 rerank top1 最高到 0.79（C 策略），进入 MEDIUM 后依赖 LLM Grader 兜底；语料增长后冻结 avgdl 会漂移，只能靠 drift 报警 + Blue-Green 重建。
+3. **Eval 规模和确定性不足**：60 条检索样本、42 条 Tool 样本，LLM 输出有随机性，单次运行的差异（如 0.95 vs 1.0）不具统计显著性；Embedding Provider 本身也非确定性（cos≈0.998）。
+
+### Regression 实测
+
+见 `V4_STATUS.md`「Regression 实测」（qwen3.8-flash 上 12/12 PASS）。
 
 ```text
 rag-agent-demo/

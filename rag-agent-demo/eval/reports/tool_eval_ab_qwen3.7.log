@@ -1,0 +1,195 @@
+[ToolEval] collection=rag_demo_v4_c_0073c1ee chat_model=qwen3.7-flash-2026-07-15
+
+[ToolEval] mode=v3_agent  n=42
+  [ 1/42] OK  intent=DIRECT            tools=[]  ttft=   926ms  [direct] 用一句话介绍一下 Python 这门编程语言。
+  [ 2/42] OK  intent=DIRECT            tools=[]  ttft=   759ms  [direct] 你好，你是谁？
+  [ 3/42] OK  intent=DIRECT            tools=[]  ttft=  1190ms  [direct] 1024 除以 8 等于多少？
+  [ 4/42] OK  intent=DIRECT            tools=[]  ttft=   720ms  [direct] 把这句话翻译成英文：今天天气很好。
+  [ 5/42] OK  intent=DIRECT            tools=[]  ttft=  1009ms  [direct] 写一句鼓励同事的话。
+  [ 6/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3145ms  [knowledge_search] Redis 怎么扩容？
+  [ 7/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2423ms  [knowledge_search] 周五可以发布吗？
+  [ 8/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2065ms  [knowledge_search] 灰度放量期间错误率超过多少要暂停？
+  [ 9/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2404ms  [knowledge_search] redis 卡了先查啥
+  [10/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2824ms  [knowledge_search] AUTH-4031 是什么错误？
+  [11/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2693ms  [knowledge_search] 我们的 Agent 一轮对话最多调用几次工具？
+  [12/42] ERR intent=DIRECT            tools=[]  ttft=   910ms  [knowledge_search] 那它扩容呢？
+  [13/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3313ms  [confusable] Redis 的 key 有什么命名规范？
+  [14/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  4464ms  [confusable] MySQL 大表加字段用什么工具？
+  [15/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2588ms  [confusable] Redis 运维文档里，脑裂是怎么处理的？
+  [16/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1736ms  [confusable] 知识库里有多少篇文档？
+  [17/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1992ms  [confusable] deploy 文档的大纲是什么？
+  [18/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3267ms  [no_answer] Kafka ISR 是怎么实现的？
+  [19/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2741ms  [no_answer] 我们团队的 Kafka 集群代号是什么？
+  [20/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2692ms  [no_answer] MongoDB 的慢查询阈值是多少？
+  [21/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1597ms  [document_lookup] 把 redis 文档完整内容给我
+  [22/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1699ms  [document_lookup] 给我看 mysql_ops 这篇文档的全文
+  [23/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1691ms  [document_lookup] 把《API 设计规范》这篇文档完整发我
+  [24/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  1526ms  [chunk_lookup] 看一下 redis_003
+  [25/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2065ms  [chunk_lookup] redis_ops_006 这个 chunk 讲了什么？
+  [26/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2028ms  [chunk_lookup] mysql_002 的原文是什么？
+  [27/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  1467ms  [chunk_lookup] 引用一下 deploy_003 的内容
+  [28/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  1511ms  [document_list] 有哪些 MySQL 文档？
+  [29/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  1360ms  [document_list] 知识库里都有哪些文档？
+  [30/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  1512ms  [document_list] Redis 相关的文档有哪几篇？
+  [31/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1246ms  [index_status] 当前知识库有多少个 chunk？
+  [32/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1142ms  [index_status] 当前一共有多少 chunk？
+  [33/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1307ms  [index_status] 现在索引用的是哪个 embedding 模型？
+  [34/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1430ms  [index_status] 知识库索引最近一次是什么时候更新的？
+  [35/42] ERR intent=MULTI_TOOL        tools=['list_documents', 'search_knowledge_base']  ttft=  4931ms  [wrong_document_id] 给我 kafka 文档的完整内容
+  [36/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2690ms  [wrong_document_id] 把 redis_cluster 文档全文发我
+  [37/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  1296ms  [wrong_chunk_id] 看一下 redis_009
+  [38/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  1989ms  [wrong_chunk_id] mysql_ops_099 讲了什么？
+  [39/42] OK  intent=MULTI_TOOL        tools=['search_knowledge_base', 'get_document']  ttft=  3873ms  [multi_tool] 知识库里讲 Redis 脑裂处理的内容出自哪篇文档？把那篇文档的完整内容也给我。
+  [40/42] ERR intent=MULTI_TOOL        tools=['list_documents', 'search_knowledge_base', 'get_document']  ttft=  6105ms  [multi_tool] 列出所有 MySQL 相关的文档，并告诉我 MySQL 慢查询的阈值是多少。
+  [41/42] OK  intent=MULTI_TOOL        tools=['get_index_status', 'search_knowledge_base']  ttft=  2657ms  [multi_tool] 当前索引用的是哪种 chunk 策略？另外团队对文档切分有什么规范？
+  [42/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk', 'get_chunk']  ttft=  1865ms  [multi_tool] 分别看一下 redis_003 和 mysql_002 这两个 chunk，对比
+
+[ToolEval] mode=query_understanding  n=42
+  [ 1/42] OK  intent=DIRECT            tools=[]  ttft=  1681ms  [direct] 用一句话介绍一下 Python 这门编程语言。
+  [ 2/42] OK  intent=DIRECT            tools=[]  ttft=  1693ms  [direct] 你好，你是谁？
+  [ 3/42] OK  intent=DIRECT            tools=[]  ttft=  1515ms  [direct] 1024 除以 8 等于多少？
+  [ 4/42] OK  intent=DIRECT            tools=[]  ttft=  1689ms  [direct] 把这句话翻译成英文：今天天气很好。
+  [ 5/42] OK  intent=DIRECT            tools=[]  ttft=  1444ms  [direct] 写一句鼓励同事的话。
+  [ 6/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2775ms  [knowledge_search] Redis 怎么扩容？
+  [ 7/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3734ms  [knowledge_search] 周五可以发布吗？
+  [ 8/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2834ms  [knowledge_search] 灰度放量期间错误率超过多少要暂停？
+  [ 9/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2815ms  [knowledge_search] redis 卡了先查啥
+  [10/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3174ms  [knowledge_search] AUTH-4031 是什么错误？
+  [11/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2991ms  [knowledge_search] 我们的 Agent 一轮对话最多调用几次工具？
+  [12/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2426ms  [knowledge_search] 那它扩容呢？
+  [13/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2833ms  [confusable] Redis 的 key 有什么命名规范？
+  [14/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3399ms  [confusable] MySQL 大表加字段用什么工具？
+  [15/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2641ms  [confusable] Redis 运维文档里，脑裂是怎么处理的？
+  [16/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1721ms  [confusable] 知识库里有多少篇文档？
+  [17/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1870ms  [confusable] deploy 文档的大纲是什么？
+  [18/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  4145ms  [no_answer] Kafka ISR 是怎么实现的？
+  [19/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3442ms  [no_answer] 我们团队的 Kafka 集群代号是什么？
+  [20/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3593ms  [no_answer] MongoDB 的慢查询阈值是多少？
+  [21/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1963ms  [document_lookup] 把 redis 文档完整内容给我
+  [22/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  1814ms  [document_lookup] 给我看 mysql_ops 这篇文档的全文
+  [23/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2681ms  [document_lookup] 把《API 设计规范》这篇文档完整发我
+  [24/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2327ms  [chunk_lookup] 看一下 redis_003
+  [25/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2083ms  [chunk_lookup] redis_ops_006 这个 chunk 讲了什么？
+  [26/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2219ms  [chunk_lookup] mysql_002 的原文是什么？
+  [27/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  1892ms  [chunk_lookup] 引用一下 deploy_003 的内容
+  [28/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  1720ms  [document_list] 有哪些 MySQL 文档？
+  [29/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  2216ms  [document_list] 知识库里都有哪些文档？
+  [30/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  2163ms  [document_list] Redis 相关的文档有哪几篇？
+  [31/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1781ms  [index_status] 当前知识库有多少个 chunk？
+  [32/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1748ms  [index_status] 当前一共有多少 chunk？
+  [33/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  2057ms  [index_status] 现在索引用的是哪个 embedding 模型？
+  [34/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  1952ms  [index_status] 知识库索引最近一次是什么时候更新的？
+  [35/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2260ms  [wrong_document_id] 给我 kafka 文档的完整内容
+  [36/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2085ms  [wrong_document_id] 把 redis_cluster 文档全文发我
+  [37/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2248ms  [wrong_chunk_id] 看一下 redis_009
+  [38/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2151ms  [wrong_chunk_id] mysql_ops_099 讲了什么？
+  [39/42] OK  intent=MULTI_TOOL        tools=['search_knowledge_base', 'get_document']  ttft=  4940ms  [multi_tool] 知识库里讲 Redis 脑裂处理的内容出自哪篇文档？把那篇文档的完整内容也给我。
+  [40/42] OK  intent=MULTI_TOOL        tools=['list_documents', 'search_knowledge_base']  ttft=  4489ms  [multi_tool] 列出所有 MySQL 相关的文档，并告诉我 MySQL 慢查询的阈值是多少。
+  [41/42] OK  intent=MULTI_TOOL        tools=['get_index_status', 'search_knowledge_base']  ttft=  4262ms  [multi_tool] 当前索引用的是哪种 chunk 策略？另外团队对文档切分有什么规范？
+  [42/42] OK  intent=MULTI_TOOL        tools=['get_chunk', 'get_chunk']  ttft=  3298ms  [multi_tool] 分别看一下 redis_003 和 mysql_002 这两个 chunk，对比
+
+========== Tool Calling Metrics ==========
+metric                                        v3_agent   query_understanding
+intent_accuracy                                 0.9524                   1.0
+candidate_tool_recall                              1.0                   1.0
+tool_selection_accuracy                         0.9286                   1.0
+first_tool_accuracy                             0.9524                   1.0
+tool_argument_valid_rate                           1.0                   1.0
+tool_execution_success_rate                        1.0                   1.0
+tool_business_success_rate                      0.7857                0.8293
+unnecessary_tool_call_rate                      0.0238                   0.0
+wrong_tool_rate                                 0.0476                   0.0
+direct_accuracy                                    1.0                   1.0
+multi_tool_task_success_rate                      0.75                   1.0
+expected_args_accuracy                          0.7778                   1.0
+answer_contains_rate                               1.0                   1.0
+no_answer_correct_rate                             1.0                   1.0
+not_found_handled_rate                             1.0                   1.0
+source_integrity_rate                              1.0                   1.0
+total_tool_calls                                    42                    41
+
+---------- by category (intent_ok / selection_ok / n) ----------
+direct                                 5/5/5                 5/5/5
+knowledge_search                       6/6/7                 7/7/7
+confusable                             5/5/5                 5/5/5
+no_answer                              3/3/3                 3/3/3
+document_lookup                        3/3/3                 3/3/3
+chunk_lookup                           4/4/4                 4/4/4
+document_list                          3/3/3                 3/3/3
+index_status                           4/4/4                 4/4/4
+wrong_document_id                      1/1/2                 2/2/2
+wrong_chunk_id                         2/2/2                 2/2/2
+multi_tool                             4/3/4                 4/4/4
+
+---------- Latency [v3_agent] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft_direct                920.7     926.0    1153.5    1189.6     5
+e2e_ttft_rag                  2879.9    2693.4    4003.5    4463.9     9
+e2e_ttft_exact_lookup         1541.5    1511.5    2041.3    2065.4    14
+total_all                     3049.5    2799.4    5340.1    8062.3    42
+query_understanding              n/a
+agent_decision_first          1006.1     956.0    1496.6    1923.9    36
+tool_selection_latency        1017.5     968.1    1509.6    1936.6    36
+tool_execution_latency_rag    1220.6     629.2    2882.1    3622.4    16
+tool_execution_latency_exact       7.6       6.4      12.4      15.8    26
+
+---------- Stability [v3_agent] ----------
+requests                        42
+llm_attempts                    113
+llm_logical_calls               113
+attempt_status_counts           {'success': 113}
+timeout_rate                    0.0
+retry_rate                      0.0
+structured_calls                12
+structured_parse_failure_rate   0.0
+structured_unrecovered_rate     0.0
+structured_reask_count          0
+rag_requests                    16
+query_rewrite_rate              0.375
+grader_trigger_rate             0.125
+tool_calls                      42
+tool_error_rate                 0.0
+duplicate_tool_call_rate        0.0
+no_answer_rate                  0.0714
+llm_error_answers               0
+
+---------- Latency [query_understanding] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft_direct               1604.4    1681.4    1692.3    1693.0     5
+e2e_ttft_rag                  2962.3    2833.8    3583.4    3734.4    10
+e2e_ttft_exact_lookup         2044.0    2010.0    2450.8    2680.9    14
+total_all                     3529.8    3428.2    5387.3    9155.3    42
+query_understanding           1626.0    1617.6    2032.3    2279.3    42
+agent_decision_first           719.9     735.0     849.4     850.2     4
+tool_selection_latency        1758.2    1703.9    2520.9    2594.0    37
+tool_execution_latency_rag     959.4     634.2    2182.6    2228.9    16
+tool_execution_latency_exact       7.3       6.0      12.9      15.5    25
+
+---------- Stability [query_understanding] ----------
+requests                        42
+llm_attempts                    115
+llm_logical_calls               115
+attempt_status_counts           {'success': 115}
+timeout_rate                    0.0
+retry_rate                      0.0
+structured_calls                51
+structured_parse_failure_rate   0.0
+structured_unrecovered_rate     0.0
+structured_reask_count          0
+rag_requests                    16
+query_rewrite_rate              0.1875
+grader_trigger_rate             0.25
+tool_calls                      41
+tool_error_rate                 0.0
+duplicate_tool_call_rate        0.0
+no_answer_rate                  0.0714
+llm_error_answers               0
+
+[v3_agent] 未通过（intent 或 tool selection）3 条：
+  那它扩容呢？  expected=KNOWLEDGE_SEARCH/['search_knowledge_base']  got=DIRECT/[]
+  给我 kafka 文档的完整内容  expected=DOCUMENT_LOOKUP/['get_document']  got=MULTI_TOOL/['list_documents', 'search_knowledge_base']
+  列出所有 MySQL 相关的文档，并告诉我 MySQL 慢查询的阈值是多少。  expected=MULTI_TOOL/['list_documents', 'search_knowledge_base']  got=MULTI_TOOL/['list_documents', 'search_knowledge_base', 'get_document']
+
+[query_understanding] 未通过（intent 或 tool selection）0 条：
+
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/tool_eval.json

@@ -41,7 +41,9 @@ class CrossEncoderReranker:
     def rerank(self, query: str, documents: list[Document], top_k: int) -> list[RerankResult]:
         if not documents:
             return []
-        logits = list(self.model.rerank(query, [doc.page_content for doc in documents]))
+        # V4：Reranker 属于检索阶段，打分用 retrieval_text（带标题信息）；交给 LLM 的仍然是 raw_text
+        texts = [doc.metadata.get("retrieval_text") or doc.page_content for doc in documents]
+        logits = list(self.model.rerank(query, texts))
         results = [
             RerankResult(document=doc, rerank_score=1.0 / (1.0 + math.exp(-logit)))
             for doc, logit in zip(documents, logits)

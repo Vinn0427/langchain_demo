@@ -1,0 +1,3334 @@
+{
+  "versions": {
+    "chat_model": "qwen3.8-flash",
+    "embedding_model": "qwen3.7-text-embedding-flash",
+    "embedding_dimension": 1024,
+    "reranker_model": "BAAI/bge-reranker-base",
+    "bm25": {
+      "version": "bm25-jieba-md5-v1",
+      "k1": 1.2,
+      "b": 0.75
+    },
+    "chunk_strategy": "C",
+    "chunk_strategy_version": "heading-v1",
+    "retrieval_text_version": "rt-v1",
+    "routing_mode": "query_understanding",
+    "structured_output_method": "json_schema",
+    "prompt_versions": {
+      "agent": "agent-v4.1",
+      "query_understanding": "qu-v1.1",
+      "grader": "grader-v2",
+      "rewrite": "retrieval-rewrite-v1",
+      "tool_schema": "tools-v1"
+    },
+    "gate": {
+      "high": 0.9,
+      "low": 0.15
+    },
+    "timeouts": {
+      "query_understanding": 12.0,
+      "agent_decision": 12.0,
+      "grader": 5.0,
+      "rewrite": 5.0,
+      "final_answer": 10.0,
+      "embedding": 5.0,
+      "tool": 5.0,
+      "request_deadline": 30.0,
+      "llm_max_attempts": 2
+    },
+    "collection": "rag_demo_v4_c_0073c1ee",
+    "alias": "rag_demo",
+    "packages": {
+      "langchain-core": "0.3.86",
+      "langchain-openai": "0.3.35",
+      "langgraph": "0.6.11",
+      "openai": "2.48.0",
+      "qdrant-client": "1.16.1",
+      "fastembed": "0.7.4",
+      "jieba": "0.42.1"
+    }
+  },
+  "modes": {
+    "query_understanding": {
+      "metrics": {
+        "n": 17,
+        "intent_accuracy": 1.0,
+        "query_must_contain_rate": 1.0,
+        "id_preservation_rate": 1.0,
+        "first_retrieval_recall@5": 1.0,
+        "qu_contract_violations": 0,
+        "qu_fallbacks": 0
+      },
+      "latency": {
+        "e2e_ttft": {
+          "n": 17,
+          "avg": 5929.9,
+          "p50": 5164.5,
+          "p95": 11990.3,
+          "max": 12534.0
+        },
+        "query_understanding": {
+          "n": 17,
+          "avg": 3222.2,
+          "p50": 2509.6,
+          "p95": 5789.9,
+          "max": 6825.0
+        },
+        "agent_decision_first": {
+          "n": 2,
+          "avg": 1914.6,
+          "p50": 1914.6,
+          "p95": 2560.5,
+          "max": 2632.3
+        },
+        "tool_selection": {
+          "n": 16,
+          "avg": 3358.3,
+          "p50": 2768.0,
+          "p95": 5857.5,
+          "max": 6827.7
+        }
+      },
+      "rows": [
+        {
+          "case": {
+            "category": "coreference",
+            "history": [
+              [
+                "Redis 怎么部署？",
+                "生产环境 Redis 统一部署为 Cluster 模式：3 主 3 从，共 6 个节点，主从分布在不同可用区。"
+              ]
+            ],
+            "query": "那它扩容呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "redis",
+              "扩容"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "redis_ops_003",
+              "redis_ops_004"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "Redis 怎么扩容？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "那它扩容呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "Redis 怎么扩容？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_3fdce94396cd",
+                "args": {
+                  "query": "Redis 怎么扩容？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 676.4,
+                "source_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003"
+                ],
+                "chunk_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "Redis 怎么扩容？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9996798070579626,
+                "first_retrieval_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003",
+                  "redis_ops_001",
+                  "redis_001",
+                  "redis_ops_005"
+                ]
+              }
+            ],
+            "answer": "Redis 扩容方式如下：\n\n**触发条件**\n- 任一分片内存使用率连续 3 天超过 70%\n- 或单分片 QPS 峰值超过 8 万\n\n满足以上任一条件即需发起扩容申请。\n\n**扩容步骤**\n1. 通过增加分片完成扩容：先加入新的一主一从节点。\n2. 使用 `redis-cli --cluster reshard` 迁移 slot。\n   - slot 迁移只能在业务低峰期（凌晨 1:00–5:00）进行\n   - 单次迁移不超过 1000 个 slot\n3. 扩容完成后观察 24 小时，确认各分片的内存和 QPS 已经均衡。\n\nSources:\n- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)\n- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)",
+            "answer_body": "Redis 扩容方式如下：\n\n**触发条件**\n- 任一分片内存使用率连续 3 天超过 70%\n- 或单分片 QPS 峰值超过 8 万\n\n满足以上任一条件即需发起扩容申请。\n\n**扩容步骤**\n1. 通过增加分片完成扩容：先加入新的一主一从节点。\n2. 使用 `redis-cli --cluster reshard` 迁移 slot。\n   - slot 迁移只能在业务低峰期（凌晨 1:00–5:00）进行\n   - 单次迁移不超过 1000 个 slot\n3. 扩容完成后观察 24 小时，确认各分片的内存和 QPS 已经均衡。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_004",
+              "redis_ops_003"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 5422.251917000011,
+              "e2e_ttft": 3338.355917000001,
+              "model_ttft": 635.9282919999885,
+              "query_understanding": 2018.1792920000134,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2020.0847499999952
+            },
+            "stages": {
+              "query_understanding": 2018.1792920000134,
+              "query_embedding": 314.37775000000556,
+              "dense_retrieval": 7.006791999998541,
+              "sparse_retrieval": 5.056457999984332,
+              "rrf_fusion": 0.06908299999963674,
+              "hybrid_retrieval": 326.66033300000663,
+              "rerank": 348.40129200000547,
+              "retrieval_gate": 0.0043750000031650416,
+              "build_tool_message": 0.13095899998916138,
+              "final_llm": 2719.593582999977,
+              "model_ttft": 635.9282919999885,
+              "e2e_ttft": 3338.355917000001,
+              "generation": 2083.6652909999884,
+              "total": 5422.251917000011
+            },
+            "llm_calls": [
+              {
+                "request_id": "e1768a06",
+                "call_id": "e1768a06-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:04.360+00:00",
+                "end_time": "2026-10-10T07:51:06.369+00:00",
+                "first_token_time": null,
+                "latency_ms": 2008.4,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "e1768a06",
+                "call_id": "e1768a06-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:06.373+00:00",
+                "end_time": "2026-10-10T07:51:06.686+00:00",
+                "first_token_time": null,
+                "latency_ms": 313.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "e1768a06",
+                "call_id": "e1768a06-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:07.053+00:00",
+                "end_time": "2026-10-10T07:51:09.772+00:00",
+                "first_token_time": "2026-10-10T07:51:07.689+00:00",
+                "latency_ms": 2718.8,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 635.9
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "e1768a06",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "e1768a06"
+          }
+        },
+        {
+          "case": {
+            "category": "ellipsis",
+            "history": [
+              [
+                "MySQL 生产环境怎么部署？",
+                "生产 MySQL 使用 8.0，一主两从，通过 MHA 自动切换。"
+              ]
+            ],
+            "query": "那备份呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "mysql",
+              "备份"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "mysql_ops_004"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "MySQL 生产环境的备份策略是什么？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "那备份呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "MySQL 生产环境的备份策略是什么？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_61684ee75a74",
+                "args": {
+                  "query": "MySQL 生产环境的备份策略是什么？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 665.9,
+                "source_ids": [
+                  "mysql_ops_004"
+                ],
+                "chunk_ids": [
+                  "mysql_ops_004"
+                ],
+                "document_ids": [
+                  "mysql_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "MySQL 生产环境的备份策略是什么？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9909535544141533,
+                "first_retrieval_ids": [
+                  "mysql_ops_004",
+                  "redis_ops_002",
+                  "mysql_ops_001",
+                  "mysql_ops_005",
+                  "redis_003"
+                ]
+              }
+            ],
+            "answer": "每天凌晨 2:00 使用 xtrabackup 做一次全量物理备份，binlog 实时归档，备份文件至少保留 14 天。\n\nSources:\n- mysql_ops_004 (data/mysql_ops.md | MySQL 运维规范 > 备份与恢复 > 备份策略)",
+            "answer_body": "每天凌晨 2:00 使用 xtrabackup 做一次全量物理备份，binlog 实时归档，备份文件至少保留 14 天。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "mysql_ops_004"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 6660.474249999993,
+              "e2e_ttft": 6110.403791999999,
+              "model_ttft": 986.762624999983,
+              "query_understanding": 4449.181917000004,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 4452.796124999992
+            },
+            "stages": {
+              "query_understanding": 4449.181917000004,
+              "query_embedding": 330.3630830000088,
+              "dense_retrieval": 7.85920900000292,
+              "sparse_retrieval": 4.269125000007534,
+              "rrf_fusion": 0.13083400000368783,
+              "hybrid_retrieval": 342.7989590000209,
+              "rerank": 321.8055420000212,
+              "retrieval_gate": 0.004208000007110968,
+              "build_tool_message": 0.07820799999080918,
+              "final_llm": 1536.2186669999858,
+              "model_ttft": 986.762624999983,
+              "e2e_ttft": 6110.403791999999,
+              "generation": 549.4560420000028,
+              "total": 6660.474249999993
+            },
+            "llm_calls": [
+              {
+                "request_id": "80059924",
+                "call_id": "80059924-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:09.778+00:00",
+                "end_time": "2026-10-10T07:51:14.225+00:00",
+                "first_token_time": null,
+                "latency_ms": 4446.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "80059924",
+                "call_id": "80059924-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:14.228+00:00",
+                "end_time": "2026-10-10T07:51:14.558+00:00",
+                "first_token_time": null,
+                "latency_ms": 329.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "80059924",
+                "call_id": "80059924-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:14.898+00:00",
+                "end_time": "2026-10-10T07:51:16.434+00:00",
+                "first_token_time": "2026-10-10T07:51:15.885+00:00",
+                "latency_ms": 1535.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 986.7
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "80059924",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "80059924"
+          }
+        },
+        {
+          "case": {
+            "category": "ellipsis",
+            "history": [
+              [
+                "灰度发布分几个阶段？",
+                "按 1% → 10% → 50% → 100% 四个阶段灰度放量。"
+              ]
+            ],
+            "query": "每个阶段要观察多久？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "灰度",
+              "阶段"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "deploy_002"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "灰度发布每个阶段要观察多久？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "每个阶段要观察多久？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "灰度发布每个阶段要观察多久？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_75828f2f9ad3",
+                "args": {
+                  "query": "灰度发布每个阶段要观察多久？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 616.6,
+                "source_ids": [
+                  "deploy_002"
+                ],
+                "chunk_ids": [
+                  "deploy_002"
+                ],
+                "document_ids": [
+                  "deploy"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "灰度发布每个阶段要观察多久？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9996941423587907,
+                "first_retrieval_ids": [
+                  "deploy_002",
+                  "deploy_003",
+                  "redis_ops_004",
+                  "deploy_001",
+                  "mysql_ops_005"
+                ]
+              }
+            ],
+            "answer": "每个阶段至少观察 **30 分钟**。\n\n放量期间重点关注两个核心指标：\n- 错误率不得超过 **0.5%**\n- P99 延迟相比上一版本上涨不得超过 **20%**\n\n任一指标超标都要暂停放量。\n\nSources:\n- deploy_002 (data/deploy.md | 发布流程 > 灰度发布)",
+            "answer_body": "每个阶段至少观察 **30 分钟**。\n\n放量期间重点关注两个核心指标：\n- 错误率不得超过 **0.5%**\n- P99 延迟相比上一版本上涨不得超过 **20%**\n\n任一指标超标都要暂停放量。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "deploy_002"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 5983.999167000007,
+              "e2e_ttft": 5164.5292080000045,
+              "model_ttft": 1075.4844170000126,
+              "query_understanding": 3464.5395000000008,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 3467.6377500000226
+            },
+            "stages": {
+              "query_understanding": 3464.5395000000008,
+              "query_embedding": 283.4274590000234,
+              "dense_retrieval": 6.797083000009252,
+              "sparse_retrieval": 4.55745799999363,
+              "rrf_fusion": 0.09004200001072604,
+              "hybrid_retrieval": 295.0547079999808,
+              "rerank": 320.1278749999972,
+              "retrieval_gate": 0.0036250000050586095,
+              "build_tool_message": 0.08312500000329237,
+              "final_llm": 1894.48787500001,
+              "model_ttft": 1075.4844170000126,
+              "e2e_ttft": 5164.5292080000045,
+              "generation": 819.0034579999974,
+              "total": 5983.999167000007
+            },
+            "llm_calls": [
+              {
+                "request_id": "6ef7e55e",
+                "call_id": "6ef7e55e-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:16.438+00:00",
+                "end_time": "2026-10-10T07:51:19.900+00:00",
+                "first_token_time": null,
+                "latency_ms": 3461.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "6ef7e55e",
+                "call_id": "6ef7e55e-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:19.904+00:00",
+                "end_time": "2026-10-10T07:51:20.187+00:00",
+                "first_token_time": null,
+                "latency_ms": 282.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "6ef7e55e",
+                "call_id": "6ef7e55e-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:20.524+00:00",
+                "end_time": "2026-10-10T07:51:22.418+00:00",
+                "first_token_time": "2026-10-10T07:51:21.600+00:00",
+                "latency_ms": 1893.9,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1075.4
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "6ef7e55e",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "6ef7e55e"
+          }
+        },
+        {
+          "case": {
+            "category": "entity_switch",
+            "history": [
+              [
+                "P0 故障多久内要响应？",
+                "P0 故障必须在 15 分钟内响应。"
+              ]
+            ],
+            "query": "那 P1 呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "p1",
+              "响应"
+            ],
+            "must_not_contain": [
+              "p0"
+            ],
+            "relevant_chunk_ids": [
+              "oncall_001"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "P1 故障多久内要响应？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "那 P1 呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "P1 故障多久内要响应？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_979f8c9dc18d",
+                "args": {
+                  "query": "P1 故障多久内要响应？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 635.2,
+                "source_ids": [
+                  "oncall_001",
+                  "oncall_003"
+                ],
+                "chunk_ids": [
+                  "oncall_001",
+                  "oncall_003"
+                ],
+                "document_ids": [
+                  "oncall"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "P1 故障多久内要响应？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9973860536246422,
+                "first_retrieval_ids": [
+                  "oncall_001",
+                  "oncall_003",
+                  "redis_ops_005",
+                  "deploy_003",
+                  "oncall_002"
+                ]
+              }
+            ],
+            "answer": "P1 故障（核心功能部分受损）必须在 **30 分钟内响应**。\n\n另外，P1 故障还需要在 3 个工作日内提交复盘报告。\n\nSources:\n- oncall_001 (data/oncall.md | 值班与故障处理 > 故障等级定义)\n- oncall_003 (data/oncall.md | 值班与故障处理 > 故障复盘)",
+            "answer_body": "P1 故障（核心功能部分受损）必须在 **30 分钟内响应**。\n\n另外，P1 故障还需要在 3 个工作日内提交复盘报告。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "oncall_001",
+              "oncall_003"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 13016.69587500001,
+              "e2e_ttft": 12533.95875000001,
+              "model_ttft": 8869.363665999997,
+              "query_understanding": 3022.6643329999943,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 3024.428958000016
+            },
+            "stages": {
+              "query_understanding": 3022.6643329999943,
+              "query_embedding": 320.8160410000005,
+              "dense_retrieval": 5.351499999989073,
+              "sparse_retrieval": 4.298583999997163,
+              "rrf_fusion": 0.048958999997239516,
+              "hybrid_retrieval": 330.6077089999917,
+              "rerank": 303.753625000013,
+              "retrieval_gate": 0.003834000011693206,
+              "build_tool_message": 0.0859169999785081,
+              "final_llm": 9351.265458,
+              "model_ttft": 8869.363665999997,
+              "e2e_ttft": 12533.95875000001,
+              "generation": 481.90179200000216,
+              "total": 13016.69587500001
+            },
+            "llm_calls": [
+              {
+                "request_id": "74be9374",
+                "call_id": "74be9374-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:22.422+00:00",
+                "end_time": "2026-10-10T07:51:25.443+00:00",
+                "first_token_time": null,
+                "latency_ms": 3021.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "74be9374",
+                "call_id": "74be9374-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:25.444+00:00",
+                "end_time": "2026-10-10T07:51:25.765+00:00",
+                "first_token_time": null,
+                "latency_ms": 320.4,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "74be9374",
+                "call_id": "74be9374-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:26.084+00:00",
+                "end_time": "2026-10-10T07:51:35.434+00:00",
+                "first_token_time": "2026-10-10T07:51:34.953+00:00",
+                "latency_ms": 9350.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 8869.3
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "74be9374",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "74be9374"
+          }
+        },
+        {
+          "case": {
+            "category": "entity_switch",
+            "history": [
+              [
+                "Redis 扩容的触发条件是什么？",
+                "任一分片内存使用率连续 3 天超过 70%，或单分片 QPS 峰值超过 8 万。"
+              ]
+            ],
+            "query": "MySQL 的呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "mysql",
+              "扩容"
+            ],
+            "must_not_contain": [
+              "redis"
+            ],
+            "relevant_chunk_ids": [
+              "mysql_ops_002"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "MySQL 扩容的触发条件是什么？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "MySQL 的呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "MySQL 扩容的触发条件是什么？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_be8b83cb9a17",
+                "args": {
+                  "query": "MySQL 扩容的触发条件是什么？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 624.4,
+                "source_ids": [
+                  "mysql_ops_002",
+                  "redis_ops_003"
+                ],
+                "chunk_ids": [
+                  "mysql_ops_002",
+                  "redis_ops_003"
+                ],
+                "document_ids": [
+                  "mysql_ops",
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "MySQL 扩容的触发条件是什么？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9997985278404766,
+                "first_retrieval_ids": [
+                  "mysql_ops_002",
+                  "redis_ops_003",
+                  "mysql_ops_006",
+                  "mysql_ops_003",
+                  "redis_ops_004"
+                ]
+              }
+            ],
+            "answer": "MySQL 扩容的触发条件：\n\n- **单库数据量超过 2TB**，或\n- **单表行数超过 5000 万**\n\n满足任一条件时，需要评估分库分表。\n\nSources:\n- mysql_ops_002 (data/mysql_ops.md | MySQL 运维规范 > 扩容 > 扩容触发条件)\n- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)",
+            "answer_body": "MySQL 扩容的触发条件：\n\n- **单库数据量超过 2TB**，或\n- **单表行数超过 5000 万**\n\n满足任一条件时，需要评估分库分表。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "mysql_ops_002",
+              "redis_ops_003"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 4166.28458400001,
+              "e2e_ttft": 3507.012292000013,
+              "model_ttft": 660.1266659999965,
+              "query_understanding": 2215.0957089999965,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2217.7610420000065
+            },
+            "stages": {
+              "query_understanding": 2215.0957089999965,
+              "query_embedding": 318.8844999999958,
+              "dense_retrieval": 8.44316699999581,
+              "sparse_retrieval": 5.703750000009222,
+              "rrf_fusion": 0.09533299999020528,
+              "hybrid_retrieval": 333.37770899998986,
+              "rerank": 289.90366700000436,
+              "retrieval_gate": 0.0034589999984291353,
+              "build_tool_message": 0.07854199998291733,
+              "final_llm": 1318.6415410000052,
+              "model_ttft": 660.1266659999965,
+              "e2e_ttft": 3507.012292000013,
+              "generation": 658.5148750000087,
+              "total": 4166.28458400001
+            },
+            "llm_calls": [
+              {
+                "request_id": "532d3046",
+                "call_id": "532d3046-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:35.439+00:00",
+                "end_time": "2026-10-10T07:51:37.652+00:00",
+                "first_token_time": null,
+                "latency_ms": 2212.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "532d3046",
+                "call_id": "532d3046-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:37.655+00:00",
+                "end_time": "2026-10-10T07:51:37.973+00:00",
+                "first_token_time": null,
+                "latency_ms": 317.9,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "532d3046",
+                "call_id": "532d3046-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:38.283+00:00",
+                "end_time": "2026-10-10T07:51:39.601+00:00",
+                "first_token_time": "2026-10-10T07:51:38.943+00:00",
+                "latency_ms": 1317.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 660.0
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "532d3046",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "532d3046"
+          }
+        },
+        {
+          "case": {
+            "category": "entity_switch",
+            "history": [
+              [
+                "Redis 慢命令的阈值是多少？",
+                "执行时间超过 10 毫秒的命令会被记录并触发告警。"
+              ]
+            ],
+            "query": "那 MySQL 的慢查询呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "mysql",
+              "慢查询"
+            ],
+            "must_not_contain": [
+              "redis"
+            ],
+            "relevant_chunk_ids": [
+              "mysql_002"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "MySQL 慢查询的阈值是多少？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "那 MySQL 的慢查询呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "MySQL 慢查询的阈值是多少？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_a6b6e0a26d70",
+                "args": {
+                  "query": "MySQL 慢查询的阈值是多少？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 1674.4,
+                "source_ids": [
+                  "mysql_002"
+                ],
+                "chunk_ids": [
+                  "mysql_002"
+                ],
+                "document_ids": [
+                  "mysql"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "MySQL 慢查询的阈值是多少？",
+                "retry_count": 0,
+                "gate_level": "medium",
+                "top_rerank_score": 0.8350729995955011,
+                "first_retrieval_ids": [
+                  "mysql_002",
+                  "mysql_ops_006",
+                  "mysql_ops_002",
+                  "redis_003",
+                  "mysql_001"
+                ]
+              }
+            ],
+            "answer": "MySQL 中执行时间超过 **1 秒**的 SQL 会被记为慢查询，每天汇总后发送给对应服务负责人。\n\nSources:\n- mysql_002 (data/mysql.md | MySQL 使用规范 > 慢查询与索引)",
+            "answer_body": "MySQL 中执行时间超过 **1 秒**的 SQL 会被记为慢查询，每天汇总后发送给对应服务负责人。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "mysql_002"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 5318.864541000011,
+              "e2e_ttft": 4884.290958000009,
+              "model_ttft": 1332.6650420000021,
+              "query_understanding": 1866.2167500000066,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 1868.8735409999992
+            },
+            "stages": {
+              "query_understanding": 1866.2167500000066,
+              "query_embedding": 120.5720000000099,
+              "dense_retrieval": 8.135083999974313,
+              "sparse_retrieval": 4.059167000008301,
+              "rrf_fusion": 0.08920900000930487,
+              "hybrid_retrieval": 133.11949999999229,
+              "rerank": 302.2739160000185,
+              "retrieval_gate": 0.0037500000189538696,
+              "llm_grader": 1236.8591249999952,
+              "build_tool_message": 0.13937500000338332,
+              "final_llm": 1766.5949170000204,
+              "model_ttft": 1332.6650420000021,
+              "e2e_ttft": 4884.290958000009,
+              "generation": 433.9298750000182,
+              "total": 5318.864541000011
+            },
+            "llm_calls": [
+              {
+                "request_id": "65f3d85b",
+                "call_id": "65f3d85b-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:39.606+00:00",
+                "end_time": "2026-10-10T07:51:41.469+00:00",
+                "first_token_time": null,
+                "latency_ms": 1863.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "65f3d85b",
+                "call_id": "65f3d85b-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:41.473+00:00",
+                "end_time": "2026-10-10T07:51:41.592+00:00",
+                "first_token_time": null,
+                "latency_ms": 119.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "65f3d85b",
+                "call_id": "65f3d85b-03",
+                "phase": "grader",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:41.909+00:00",
+                "end_time": "2026-10-10T07:51:43.144+00:00",
+                "first_token_time": null,
+                "latency_ms": 1234.9,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "65f3d85b",
+                "call_id": "65f3d85b-04",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:43.154+00:00",
+                "end_time": "2026-10-10T07:51:44.920+00:00",
+                "first_token_time": "2026-10-10T07:51:44.487+00:00",
+                "latency_ms": 1765.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1332.5
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "65f3d85b",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              },
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "65f3d85b",
+                "phase": "grader",
+                "schema": "GradeResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "65f3d85b"
+          }
+        },
+        {
+          "case": {
+            "category": "entity_switch",
+            "history": [
+              [
+                "refresh token 的有效期是多久？",
+                "refresh token 有效期 7 天。"
+              ]
+            ],
+            "query": "access token 呢？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "access token",
+              "有效期"
+            ],
+            "must_not_contain": [
+              "refresh"
+            ],
+            "relevant_chunk_ids": [
+              "api_002"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "access token 的有效期是多久？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "access token 呢？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "access token 的有效期是多久？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_49ab31f1b710",
+                "args": {
+                  "query": "access token 的有效期是多久？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 685.9,
+                "source_ids": [
+                  "api_002"
+                ],
+                "chunk_ids": [
+                  "api_002"
+                ],
+                "document_ids": [
+                  "api"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "access token 的有效期是多久？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9976207402051128,
+                "first_retrieval_ids": [
+                  "api_002",
+                  "api_001",
+                  "redis_ops_003",
+                  "redis_ops_005",
+                  "oncall_001"
+                ]
+              }
+            ],
+            "answer": "access token 有效期为 **2 小时**（refresh token 为 7 天）。鉴权统一使用 JWT。\n\nSources:\n- api_002 (data/api.md | API 设计规范 > 接口版本与鉴权)",
+            "answer_body": "access token 有效期为 **2 小时**（refresh token 为 7 天）。鉴权统一使用 JWT。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "api_002"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 12149.064457999997,
+              "e2e_ttft": 11854.387083000005,
+              "model_ttft": 4336.290042000001,
+              "query_understanding": 6824.983166999999,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 6827.692417000008
+            },
+            "stages": {
+              "query_understanding": 6824.983166999999,
+              "query_embedding": 337.0733330000064,
+              "dense_retrieval": 8.40949999999907,
+              "sparse_retrieval": 4.046665999993593,
+              "rrf_fusion": 0.05287499999440115,
+              "hybrid_retrieval": 349.6940000000279,
+              "rerank": 335.07245799998486,
+              "retrieval_gate": 0.00374999999053216,
+              "build_tool_message": 0.07841699999744378,
+              "final_llm": 4630.601832999986,
+              "model_ttft": 4336.290042000001,
+              "e2e_ttft": 11854.387083000005,
+              "generation": 294.31179099998417,
+              "total": 12149.064457999997
+            },
+            "llm_calls": [
+              {
+                "request_id": "5097470a",
+                "call_id": "5097470a-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:44.925+00:00",
+                "end_time": "2026-10-10T07:51:51.747+00:00",
+                "first_token_time": null,
+                "latency_ms": 6822.1,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "5097470a",
+                "call_id": "5097470a-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:51.751+00:00",
+                "end_time": "2026-10-10T07:51:52.087+00:00",
+                "first_token_time": null,
+                "latency_ms": 336.4,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "5097470a",
+                "call_id": "5097470a-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:52.440+00:00",
+                "end_time": "2026-10-10T07:51:57.070+00:00",
+                "first_token_time": "2026-10-10T07:51:56.776+00:00",
+                "latency_ms": 4629.9,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 4336.2
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "5097470a",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "5097470a"
+          }
+        },
+        {
+          "case": {
+            "category": "constraint_inheritance",
+            "history": [
+              [
+                "Redis 生产环境的持久化怎么配置？",
+                "AOF（appendfsync everysec），并在每天凌晨 3:00 额外生成一次 RDB 快照。"
+              ]
+            ],
+            "query": "开发环境也这样吗？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "redis",
+              "开发环境",
+              "持久化"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "redis_ops_001"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "Redis 开发环境的持久化配置是否与生产环境相同？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "开发环境也这样吗？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "Redis 开发环境的持久化配置是否与生产环境相同？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base",
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_2d8b7d6acbdb",
+                "args": {
+                  "query": "Redis 开发环境的持久化配置是否与生产环境相同？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 644.2,
+                "source_ids": [
+                  "redis_ops_002"
+                ],
+                "chunk_ids": [
+                  "redis_ops_002"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "Redis 开发环境的持久化配置是否与生产环境相同？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9986086174903208,
+                "first_retrieval_ids": [
+                  "redis_ops_002",
+                  "redis_ops_001",
+                  "mysql_ops_001",
+                  "redis_003",
+                  "redis_ops_006"
+                ]
+              },
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "call_8bf8d6a70bb94113b969ec2a",
+                "args": {
+                  "query": "Redis 开发环境 测试环境 持久化 AOF RDB 配置"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 461.6,
+                "source_ids": [
+                  "redis_ops_001"
+                ],
+                "chunk_ids": [
+                  "redis_ops_001"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "agent",
+                "query_source": "tool_args",
+                "final_query": "Redis 开发环境 测试环境 持久化 AOF RDB 配置",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9984433364330209,
+                "first_retrieval_ids": [
+                  "redis_ops_002",
+                  "redis_ops_001",
+                  "redis_001",
+                  "redis_ops_006",
+                  "redis_ops_003"
+                ]
+              }
+            ],
+            "answer": "不一样。开发环境**不开启持久化**。\n\n本地开发直接用 Docker 启动单节点实例即可：\n\n```bash\ndocker run -d -p 6379:6379 redis:7.2\n```\n\n而生产环境是 Cluster 模式（3 主 3 从），持久化采用 AOF（appendfsync everysec）+ 每天凌晨 3:00 的 RDB 快照备份。两者配置差异较大，不能照搬。\n\nSources:\n- redis_ops_002 (data/redis_ops.md | Redis 运维规范 > 部署 > 生产集群部署)\n- redis_ops_001 (data/redis_ops.md | Redis 运维规范 > 部署 > 开发环境)",
+            "answer_body": "不一样。开发环境**不开启持久化**。\n\n本地开发直接用 Docker 启动单节点实例即可：\n\n```bash\ndocker run -d -p 6379:6379 redis:7.2\n```\n\n而生产环境是 Cluster 模式（3 主 3 从），持久化采用 AOF（appendfsync everysec）+ 每天凌晨 3:00 的 RDB 快照备份。两者配置差异较大，不能照搬。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_002",
+              "redis_ops_001"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 8582.056334000015,
+              "e2e_ttft": 7168.770042000006,
+              "model_ttft": 1037.5884160000055,
+              "query_understanding": 2379.543124999998,
+              "agent_decision": 2632.3030419999895,
+              "first_agent_decision": 2632.3030419999895,
+              "tool_selection": 2382.6550420000103
+            },
+            "stages": {
+              "query_understanding": 2379.543124999998,
+              "query_embedding": 377.01325099999394,
+              "dense_retrieval": 15.9710829999824,
+              "sparse_retrieval": 9.815083999967555,
+              "rrf_fusion": 0.15270899999109133,
+              "hybrid_retrieval": 403.2977499999788,
+              "rerank": 699.8175409999874,
+              "retrieval_gate": 0.007165999988956173,
+              "build_tool_message": 0.38183300003424847,
+              "agent_decision": 2632.3030419999895,
+              "final_llm": 2450.580000000002,
+              "model_ttft": 1037.5884160000055,
+              "e2e_ttft": 7168.770042000006,
+              "generation": 1412.9915839999967,
+              "total": 8582.056334000015
+            },
+            "llm_calls": [
+              {
+                "request_id": "96bbfb44",
+                "call_id": "96bbfb44-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:57.075+00:00",
+                "end_time": "2026-10-10T07:51:59.452+00:00",
+                "first_token_time": null,
+                "latency_ms": 2376.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "96bbfb44",
+                "call_id": "96bbfb44-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:51:59.455+00:00",
+                "end_time": "2026-10-10T07:51:59.737+00:00",
+                "first_token_time": null,
+                "latency_ms": 281.8,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "96bbfb44",
+                "call_id": "96bbfb44-03",
+                "phase": "agent_decision",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:00.103+00:00",
+                "end_time": "2026-10-10T07:52:02.734+00:00",
+                "first_token_time": "2026-10-10T07:52:02.397+00:00",
+                "latency_ms": 2631.1,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 2294.0
+              },
+              {
+                "request_id": "96bbfb44",
+                "call_id": "96bbfb44-04",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:02.738+00:00",
+                "end_time": "2026-10-10T07:52:02.831+00:00",
+                "first_token_time": null,
+                "latency_ms": 93.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "96bbfb44",
+                "call_id": "96bbfb44-05",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:03.202+00:00",
+                "end_time": "2026-10-10T07:52:05.652+00:00",
+                "first_token_time": "2026-10-10T07:52:04.239+00:00",
+                "latency_ms": 2449.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1037.5
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "96bbfb44",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              },
+              {
+                "type": "event",
+                "event": "context_dedup",
+                "request_id": "96bbfb44",
+                "removed": [
+                  "redis_ops_002"
+                ]
+              }
+            ],
+            "request_id": "96bbfb44"
+          }
+        },
+        {
+          "case": {
+            "category": "coreference",
+            "history": [
+              [
+                "飞鸽是什么？",
+                "飞鸽（FeiGe）是内部告警平台，告警推送到值班人手机。"
+              ]
+            ],
+            "query": "主值班没确认它推的告警会怎样？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "主值班",
+              "告警"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "oncall_002"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "飞鸽主值班没确认它推的告警会怎样？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "主值班没确认它推的告警会怎样？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "飞鸽主值班没确认它推的告警会怎样？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_d07c91a3d85b",
+                "args": {
+                  "query": "飞鸽主值班没确认它推的告警会怎样？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 675.9,
+                "source_ids": [
+                  "oncall_002"
+                ],
+                "chunk_ids": [
+                  "oncall_002"
+                ],
+                "document_ids": [
+                  "oncall"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "飞鸽主值班没确认它推的告警会怎样？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9969130914549735,
+                "first_retrieval_ids": [
+                  "oncall_002",
+                  "deploy_003",
+                  "oncall_001",
+                  "redis_ops_005",
+                  "redis_003"
+                ]
+              }
+            ],
+            "answer": "主值班 **5 分钟内未确认**时，飞鸽会自动升级给备份值班人。\n\nSources:\n- oncall_002 (data/oncall.md | 值班与故障处理 > 值班安排)",
+            "answer_body": "主值班 **5 分钟内未确认**时，飞鸽会自动升级给备份值班人。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "oncall_002"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 5306.13787499999,
+              "e2e_ttft": 4980.384167000011,
+              "model_ttft": 409.65925000000425,
+              "query_understanding": 3887.092042000006,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 3890.171291999991
+            },
+            "stages": {
+              "query_understanding": 3887.092042000006,
+              "query_embedding": 314.2377089999968,
+              "dense_retrieval": 7.713707999982944,
+              "sparse_retrieval": 4.728124999985539,
+              "rrf_fusion": 0.07375000001275112,
+              "hybrid_retrieval": 326.9825420000245,
+              "rerank": 347.82829200000265,
+              "retrieval_gate": 0.003792000001112683,
+              "build_tool_message": 0.08020800001418138,
+              "final_llm": 734.6170829999892,
+              "model_ttft": 409.65925000000425,
+              "e2e_ttft": 4980.384167000011,
+              "generation": 324.95783299998493,
+              "total": 5306.13787499999
+            },
+            "llm_calls": [
+              {
+                "request_id": "f87b6742",
+                "call_id": "f87b6742-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:05.664+00:00",
+                "end_time": "2026-10-10T07:52:09.541+00:00",
+                "first_token_time": null,
+                "latency_ms": 3877.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "f87b6742",
+                "call_id": "f87b6742-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:09.545+00:00",
+                "end_time": "2026-10-10T07:52:09.858+00:00",
+                "first_token_time": null,
+                "latency_ms": 313.2,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "f87b6742",
+                "call_id": "f87b6742-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:10.225+00:00",
+                "end_time": "2026-10-10T07:52:10.958+00:00",
+                "first_token_time": "2026-10-10T07:52:10.634+00:00",
+                "latency_ms": 733.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 409.6
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "f87b6742",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "f87b6742"
+          }
+        },
+        {
+          "case": {
+            "category": "coreference_document",
+            "history": [
+              [
+                "有哪些 MySQL 文档？",
+                "有两篇：mysql（MySQL 使用规范）和 mysql_ops（MySQL 运维规范）。"
+              ]
+            ],
+            "query": "第二篇的完整内容给我",
+            "expected_intents": [
+              "DOCUMENT_LOOKUP"
+            ],
+            "must_contain": [
+              "mysql_ops"
+            ],
+            "must_not_contain": [],
+            "expected_document_id": "mysql_ops"
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "{'document_id': 'mysql_ops'} MySQL 运维规范文档的完整内容是什么？",
+            "query_ok": true,
+            "id_ok": true,
+            "first_retrieval_recall@5": null
+          },
+          "run": {
+            "query": "第二篇的完整内容给我",
+            "mode": "query_understanding",
+            "intent": "DOCUMENT_LOOKUP",
+            "qu_status": "ok",
+            "standalone_query": "MySQL 运维规范文档的完整内容是什么？",
+            "candidate_tools": [
+              "get_document",
+              "list_documents"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "get_document"
+            ],
+            "tool_log": [
+              {
+                "name": "get_document",
+                "tool_call_id": "qu_731f2b04eaf4",
+                "args": {
+                  "document_id": "mysql_ops"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": null,
+                "latency_ms": 6.5,
+                "source_ids": [
+                  "mysql_ops"
+                ],
+                "chunk_ids": [
+                  "mysql_ops_001",
+                  "mysql_ops_002",
+                  "mysql_ops_003",
+                  "mysql_ops_004",
+                  "mysql_ops_005",
+                  "mysql_ops_006"
+                ],
+                "document_ids": [
+                  "mysql_ops"
+                ],
+                "dispatched_by": "query_understanding"
+              }
+            ],
+            "answer": "# MySQL 运维规范\n\n## 部署 > 生产集群部署\n生产环境统一使用 8.0 版本，采用一主两从架构，通过 MHA 实现主库故障时的自动切换。\n主库和从库必须部署在不同机架上，所有从库开启 `read_only`。\n\n## 扩容 > 扩容触发条件\n单库数据量超过 2TB，或者单表行数超过 5000 万时，需要评估分库分表。\n\n## 扩容 > 扩容步骤\n读压力大时优先增加从库；写压力大时按用户 ID 哈希拆分为 16 个分库。\n拆分前必须先在影子库完成全量数据校验，流量切换安排在周二或周四凌晨进行。\n\n## 备份与恢复 > 备份策略\n每天凌晨 2:00 使用 xtrabackup 做一次全量物理备份，binlog 实时归档，备份文件至少保留 14 天。\n\n## 备份与恢复 > 恢复演练\n每个季度至少做一次恢复演练，要求 1TB 数据在 4 小时内完成恢复。\n\n## 主从延迟\n从库复制延迟超过 30 秒触发告警；延迟超过 300 秒时，读流量自动切回主库。\n\nSources:\n- mysql_ops (MySQL 运维规范 | data/mysql_ops.md)",
+            "answer_body": "# MySQL 运维规范\n\n## 部署 > 生产集群部署\n生产环境统一使用 8.0 版本，采用一主两从架构，通过 MHA 实现主库故障时的自动切换。\n主库和从库必须部署在不同机架上，所有从库开启 `read_only`。\n\n## 扩容 > 扩容触发条件\n单库数据量超过 2TB，或者单表行数超过 5000 万时，需要评估分库分表。\n\n## 扩容 > 扩容步骤\n读压力大时优先增加从库；写压力大时按用户 ID 哈希拆分为 16 个分库。\n拆分前必须先在影子库完成全量数据校验，流量切换安排在周二或周四凌晨进行。\n\n## 备份与恢复 > 备份策略\n每天凌晨 2:00 使用 xtrabackup 做一次全量物理备份，binlog 实时归档，备份文件至少保留 14 天。\n\n## 备份与恢复 > 恢复演练\n每个季度至少做一次恢复演练，要求 1TB 数据在 4 小时内完成恢复。\n\n## 主从延迟\n从库复制延迟超过 30 秒触发告警；延迟超过 300 秒时，读流量自动切回主库。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "mysql_ops"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 6229.622082999981,
+              "e2e_ttft": 3031.276415999997,
+              "model_ttft": 584.8113339999941,
+              "query_understanding": 2429.5433750000084,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2432.5156250000077
+            },
+            "stages": {
+              "query_understanding": 2429.5433750000084,
+              "tool_execution": 6.527290999997604,
+              "final_llm": 3782.093166999999,
+              "model_ttft": 584.8113339999941,
+              "e2e_ttft": 3031.276415999997,
+              "generation": 3197.2818330000055,
+              "total": 6229.622082999981
+            },
+            "llm_calls": [
+              {
+                "request_id": "a2094c74",
+                "call_id": "a2094c74-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:10.964+00:00",
+                "end_time": "2026-10-10T07:52:13.390+00:00",
+                "first_token_time": null,
+                "latency_ms": 2426.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "a2094c74",
+                "call_id": "a2094c74-02",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:13.407+00:00",
+                "end_time": "2026-10-10T07:52:17.188+00:00",
+                "first_token_time": "2026-10-10T07:52:13.992+00:00",
+                "latency_ms": 3781.0,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 584.7
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "a2094c74",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "a2094c74"
+          }
+        },
+        {
+          "case": {
+            "category": "coreference_chunk",
+            "history": [
+              [
+                "看一下 redis_003",
+                "redis_003 讲的是 Redis 故障排查：大 key、热 key、慢命令。"
+              ]
+            ],
+            "query": "它属于哪篇文档？把那篇完整内容给我",
+            "expected_intents": [
+              "DOCUMENT_LOOKUP",
+              "MULTI_TOOL",
+              "CHUNK_LOOKUP"
+            ],
+            "must_contain": [
+              "redis"
+            ],
+            "must_not_contain": [],
+            "expected_document_id": "redis"
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "{'chunk_id': 'redis_003'} {'document_id': 'redis', 'view': 'full'} chunk_id 为 redis_003 的内容属于哪篇文档？请提供该文档的完整内容。",
+            "query_ok": true,
+            "id_ok": true,
+            "first_retrieval_recall@5": null
+          },
+          "run": {
+            "query": "它属于哪篇文档？把那篇完整内容给我",
+            "mode": "query_understanding",
+            "intent": "MULTI_TOOL",
+            "qu_status": "ok",
+            "standalone_query": "chunk_id 为 redis_003 的内容属于哪篇文档？请提供该文档的完整内容。",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk",
+              "list_documents",
+              "get_index_status"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "get_chunk",
+              "get_document"
+            ],
+            "tool_log": [
+              {
+                "name": "get_chunk",
+                "tool_call_id": "call_f1cde1fa044f4eee8922a746",
+                "args": {
+                  "chunk_id": "redis_003"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": null,
+                "latency_ms": 6.2,
+                "source_ids": [
+                  "redis_003"
+                ],
+                "chunk_ids": [
+                  "redis_003"
+                ],
+                "document_ids": [
+                  "redis"
+                ],
+                "dispatched_by": "agent"
+              },
+              {
+                "name": "get_document",
+                "tool_call_id": "call_fb917ebaf12d4a0794408596",
+                "args": {
+                  "document_id": "redis",
+                  "view": "full"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": null,
+                "latency_ms": 5.9,
+                "source_ids": [
+                  "redis"
+                ],
+                "chunk_ids": [
+                  "redis_001",
+                  "redis_002",
+                  "redis_003"
+                ],
+                "document_ids": [
+                  "redis"
+                ],
+                "dispatched_by": "agent"
+              }
+            ],
+            "answer": "redis_003 属于文档 **《Redis 使用手册》**（document_id: `redis`，来源 `data/redis.md`，共 3 个 chunk）。\n\n完整内容如下：\n\n---\n\n## Redis 的用途（redis_001）\n\nRedis 是一个基于内存的 Key-Value 数据库，读写速度极快。常见用途包括：缓存、分布式锁、计数器、排行榜、简单消息队列（List / Stream）。\n\n在我们团队，Redis 集群的内部代号是「青鸟」（Bluebird），主要用于缓存用户会话（Session）和接口限流。\n\n团队规范要求：所有 key 必须以 `demo:` 作为前缀，并且必须设置过期时间。\n\n---\n\n## 接口限流方案（redis_002）\n\n团队的接口限流统一基于 Redis 的 Sorted Set（ZSET）实现滑动窗口算法：每次请求以时间戳作为 score 写入 ZSET，并删除窗口之外的旧记录。\n\n默认限额为每个用户每分钟 120 次请求，超过限额时网关返回 HTTP 429，错误码为 `RATE_LIMITED`。\n\n限流相关的 key 统一使用 `demo:ratelimit:{user_id}` 格式。\n\n---\n\n## Redis 故障排查（redis_003）\n\n线上 Redis 变慢时，优先排查三类问题：大 key、热 key、慢命令。\n\n团队禁止写入超过 10MB 的单个 value；禁止在生产环境执行 `KEYS *`，遍历 key 必须使用 `SCAN`。\n\n慢命令通过 `SLOWLOG GET` 查看，执行时间超过 10 毫秒的命令会被记录并触发告警。\n\nSources:\n- redis_003 (Redis 使用手册 > Redis 故障排查)\n- redis (Redis 使用手册 | data/redis.md)",
+            "answer_body": "redis_003 属于文档 **《Redis 使用手册》**（document_id: `redis`，来源 `data/redis.md`，共 3 个 chunk）。\n\n完整内容如下：\n\n---\n\n## Redis 的用途（redis_001）\n\nRedis 是一个基于内存的 Key-Value 数据库，读写速度极快。常见用途包括：缓存、分布式锁、计数器、排行榜、简单消息队列（List / Stream）。\n\n在我们团队，Redis 集群的内部代号是「青鸟」（Bluebird），主要用于缓存用户会话（Session）和接口限流。\n\n团队规范要求：所有 key 必须以 `demo:` 作为前缀，并且必须设置过期时间。\n\n---\n\n## 接口限流方案（redis_002）\n\n团队的接口限流统一基于 Redis 的 Sorted Set（ZSET）实现滑动窗口算法：每次请求以时间戳作为 score 写入 ZSET，并删除窗口之外的旧记录。\n\n默认限额为每个用户每分钟 120 次请求，超过限额时网关返回 HTTP 429，错误码为 `RATE_LIMITED`。\n\n限流相关的 key 统一使用 `demo:ratelimit:{user_id}` 格式。\n\n---\n\n## Redis 故障排查（redis_003）\n\n线上 Redis 变慢时，优先排查三类问题：大 key、热 key、慢命令。\n\n团队禁止写入超过 10MB 的单个 value；禁止在生产环境执行 `KEYS *`，遍历 key 必须使用 `SCAN`。\n\n慢命令通过 `SLOWLOG GET` 查看，执行时间超过 10 毫秒的命令会被记录并触发告警。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_003",
+              "redis"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 11196.163208999991,
+              "e2e_ttft": 6840.381833999999,
+              "model_ttft": 1130.7572500000163,
+              "query_understanding": 2654.7173750000184,
+              "agent_decision": 3006.1717500000213,
+              "first_agent_decision": 1196.9542500000045,
+              "tool_selection": 3866.144583999983
+            },
+            "stages": {
+              "query_understanding": 2654.7173750000184,
+              "agent_decision": 3006.1717500000213,
+              "tool_execution": 12.074331999997412,
+              "final_llm": 5485.752750000018,
+              "model_ttft": 1130.7572500000163,
+              "e2e_ttft": 6840.381833999999,
+              "generation": 4354.995500000001,
+              "total": 11196.163208999991
+            },
+            "llm_calls": [
+              {
+                "request_id": "4f523c65",
+                "call_id": "4f523c65-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:17.193+00:00",
+                "end_time": "2026-10-10T07:52:19.846+00:00",
+                "first_token_time": null,
+                "latency_ms": 2652.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "4f523c65",
+                "call_id": "4f523c65-02",
+                "phase": "agent_decision",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:19.859+00:00",
+                "end_time": "2026-10-10T07:52:21.055+00:00",
+                "first_token_time": "2026-10-10T07:52:20.856+00:00",
+                "latency_ms": 1196.1,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 997.2
+              },
+              {
+                "request_id": "4f523c65",
+                "call_id": "4f523c65-03",
+                "phase": "agent_decision",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:21.073+00:00",
+                "end_time": "2026-10-10T07:52:22.881+00:00",
+                "first_token_time": "2026-10-10T07:52:22.592+00:00",
+                "latency_ms": 1808.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1519.1
+              },
+              {
+                "request_id": "4f523c65",
+                "call_id": "4f523c65-04",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:22.900+00:00",
+                "end_time": "2026-10-10T07:52:28.385+00:00",
+                "first_token_time": "2026-10-10T07:52:24.031+00:00",
+                "latency_ms": 5484.8,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1130.7
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "4f523c65",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "4f523c65"
+          }
+        },
+        {
+          "case": {
+            "category": "id_preservation",
+            "history": [],
+            "query": "redis_ops_006 讲的什么",
+            "expected_intents": [
+              "CHUNK_LOOKUP"
+            ],
+            "must_contain": [
+              "redis_ops_006"
+            ],
+            "must_not_contain": [],
+            "expected_chunk_id": "redis_ops_006"
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "{'chunk_id': 'redis_ops_006'} redis_ops_006 讲的什么",
+            "query_ok": true,
+            "id_ok": true,
+            "first_retrieval_recall@5": null
+          },
+          "run": {
+            "query": "redis_ops_006 讲的什么",
+            "mode": "query_understanding",
+            "intent": "CHUNK_LOOKUP",
+            "qu_status": "ok",
+            "standalone_query": "redis_ops_006 讲的什么",
+            "candidate_tools": [
+              "get_chunk",
+              "get_document"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "get_chunk"
+            ],
+            "tool_log": [
+              {
+                "name": "get_chunk",
+                "tool_call_id": "qu_bfea940be8d7",
+                "args": {
+                  "chunk_id": "redis_ops_006"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": null,
+                "latency_ms": 3.2,
+                "source_ids": [
+                  "redis_ops_006"
+                ],
+                "chunk_ids": [
+                  "redis_ops_006"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding"
+              }
+            ],
+            "answer": "`redis_ops_006` 讲的是 **Redis 脑裂问题的处理**，属于「Redis 运维规范 > 高可用」章节。\n\n主要内容包括：\n\n1. **问题场景**：主从网络分区时，可能出现两个主节点同时接受写入的“脑裂”问题。\n2. **统一配置**：团队统一设置 `min-replicas-to-write 1` 和 `min-replicas-max-lag 10`，使没有可用从节点的主节点拒绝写入。\n3. **恢复策略**：网络恢复后以新主节点数据为准；旧主节点在分区期间写入的数据需人工核对后补录。\n\nSources:\n- redis_ops_006 (Redis 运维规范 > 高可用 > 脑裂处理)",
+            "answer_body": "`redis_ops_006` 讲的是 **Redis 脑裂问题的处理**，属于「Redis 运维规范 > 高可用」章节。\n\n主要内容包括：\n\n1. **问题场景**：主从网络分区时，可能出现两个主节点同时接受写入的“脑裂”问题。\n2. **统一配置**：团队统一设置 `min-replicas-to-write 1` 和 `min-replicas-max-lag 10`，使没有可用从节点的主节点拒绝写入。\n3. **恢复策略**：网络恢复后以新主节点数据为准；旧主节点在分区期间写入的数据需人工核对后补录。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_006"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 5036.39416599998,
+              "e2e_ttft": 3285.5740830000004,
+              "model_ttft": 766.367917000025,
+              "query_understanding": 2509.550332999993,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2511.616332999978
+            },
+            "stages": {
+              "query_understanding": 2509.550332999993,
+              "tool_execution": 3.17700000002219,
+              "final_llm": 2516.7316670000164,
+              "model_ttft": 766.367917000025,
+              "e2e_ttft": 3285.5740830000004,
+              "generation": 1750.3637499999911,
+              "total": 5036.39416599998
+            },
+            "llm_calls": [
+              {
+                "request_id": "0e09a4c9",
+                "call_id": "0e09a4c9-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:28.390+00:00",
+                "end_time": "2026-10-10T07:52:30.897+00:00",
+                "first_token_time": null,
+                "latency_ms": 2507.5,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "0e09a4c9",
+                "call_id": "0e09a4c9-02",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:30.906+00:00",
+                "end_time": "2026-10-10T07:52:33.422+00:00",
+                "first_token_time": "2026-10-10T07:52:31.672+00:00",
+                "latency_ms": 2516.0,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 766.3
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "0e09a4c9",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "0e09a4c9"
+          }
+        },
+        {
+          "case": {
+            "category": "id_preservation",
+            "history": [
+              [
+                "Redis 怎么扩容？",
+                "通过增加分片完成，用 redis-cli --cluster reshard 迁移 slot。"
+              ]
+            ],
+            "query": "redis_ops_004 里说的迁移窗口是几点？",
+            "expected_intents": [
+              "CHUNK_LOOKUP",
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "redis_ops_004"
+            ],
+            "must_not_contain": [],
+            "expected_chunk_id": "redis_ops_004"
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "{'chunk_id': 'redis_ops_004'} redis_ops_004 里说的迁移窗口是几点？",
+            "query_ok": true,
+            "id_ok": true,
+            "first_retrieval_recall@5": null
+          },
+          "run": {
+            "query": "redis_ops_004 里说的迁移窗口是几点？",
+            "mode": "query_understanding",
+            "intent": "CHUNK_LOOKUP",
+            "qu_status": "ok",
+            "standalone_query": "redis_ops_004 里说的迁移窗口是几点？",
+            "candidate_tools": [
+              "get_chunk",
+              "get_document"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "get_chunk"
+            ],
+            "tool_log": [
+              {
+                "name": "get_chunk",
+                "tool_call_id": "qu_15d2d2a61a4d",
+                "args": {
+                  "chunk_id": "redis_ops_004"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": null,
+                "latency_ms": 5.1,
+                "source_ids": [
+                  "redis_ops_004"
+                ],
+                "chunk_ids": [
+                  "redis_ops_004"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding"
+              }
+            ],
+            "answer": "迁移窗口为业务低峰期 **凌晨 1:00–5:00**。\n\n补充相关约束：单次迁移不超过 1000 个 slot，扩容完成后需观察 24 小时确认各分片内存和 QPS 均衡。\n\nSources:\n- redis_ops_004 (Redis 运维规范 > 扩容 > 扩容步骤)",
+            "answer_body": "迁移窗口为业务低峰期 **凌晨 1:00–5:00**。\n\n补充相关约束：单次迁移不超过 1000 个 slot，扩容完成后需观察 24 小时确认各分片内存和 QPS 均衡。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_004"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 8785.812375000007,
+              "e2e_ttft": 8101.114249999995,
+              "model_ttft": 5699.711334,
+              "query_understanding": 2386.7777920000035,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2389.881250000002
+            },
+            "stages": {
+              "query_understanding": 2386.7777920000035,
+              "tool_execution": 5.066166999995403,
+              "final_llm": 6383.533499999999,
+              "model_ttft": 5699.711334,
+              "e2e_ttft": 8101.114249999995,
+              "generation": 683.8221659999988,
+              "total": 8785.812375000007
+            },
+            "llm_calls": [
+              {
+                "request_id": "e3aba321",
+                "call_id": "e3aba321-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:33.426+00:00",
+                "end_time": "2026-10-10T07:52:35.811+00:00",
+                "first_token_time": null,
+                "latency_ms": 2384.1,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "e3aba321",
+                "call_id": "e3aba321-02",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:35.825+00:00",
+                "end_time": "2026-10-10T07:52:42.208+00:00",
+                "first_token_time": "2026-10-10T07:52:41.525+00:00",
+                "latency_ms": 6382.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 5699.6
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "e3aba321",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "e3aba321"
+          }
+        },
+        {
+          "case": {
+            "category": "number_negation",
+            "history": [],
+            "query": "不在周五的话，哪天可以做常规发布？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "周五",
+              "不"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "deploy_001"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "不在周五的话，哪天可以做常规发布？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "不在周五的话，哪天可以做常规发布？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "不在周五的话，哪天可以做常规发布？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_cc9b196ea4c1",
+                "args": {
+                  "query": "不在周五的话，哪天可以做常规发布？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 611.7,
+                "source_ids": [
+                  "deploy_001"
+                ],
+                "chunk_ids": [
+                  "deploy_001"
+                ],
+                "document_ids": [
+                  "deploy"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "不在周五的话，哪天可以做常规发布？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9908781130550097,
+                "first_retrieval_ids": [
+                  "deploy_001",
+                  "deploy_003",
+                  "deploy_002",
+                  "mysql_ops_003",
+                  "oncall_002"
+                ]
+              }
+            ],
+            "answer": "常规发布窗口为 **每周二、周四的 14:00–17:00**。\n\n因此不在周五的话，可以做常规发布的日期是：**周二和周四**。\n\nSources:\n- deploy_001 (data/deploy.md | 发布流程 > 发布平台与发布窗口)",
+            "answer_body": "常规发布窗口为 **每周二、周四的 14:00–17:00**。\n\n因此不在周五的话，可以做常规发布的日期是：**周二和周四**。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "deploy_001"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 6619.986499999982,
+              "e2e_ttft": 5958.602999999983,
+              "model_ttft": 787.1874589999948,
+              "query_understanding": 4552.708125000009,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 4555.345041999999
+            },
+            "stages": {
+              "query_understanding": 4552.708125000009,
+              "query_embedding": 278.0199580000158,
+              "dense_retrieval": 8.479375000007394,
+              "sparse_retrieval": 5.522458000001507,
+              "rrf_fusion": 0.09587499999952342,
+              "hybrid_retrieval": 292.2882499999844,
+              "rerank": 318.1008330000168,
+              "retrieval_gate": 0.003458000009004536,
+              "build_tool_message": 0.0832079999781854,
+              "final_llm": 1447.7772919999836,
+              "model_ttft": 787.1874589999948,
+              "e2e_ttft": 5958.602999999983,
+              "generation": 660.5898329999889,
+              "total": 6619.986499999982
+            },
+            "llm_calls": [
+              {
+                "request_id": "7ddecbf0",
+                "call_id": "7ddecbf0-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:42.212+00:00",
+                "end_time": "2026-10-10T07:52:46.763+00:00",
+                "first_token_time": null,
+                "latency_ms": 4550.6,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "7ddecbf0",
+                "call_id": "7ddecbf0-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:46.766+00:00",
+                "end_time": "2026-10-10T07:52:47.043+00:00",
+                "first_token_time": null,
+                "latency_ms": 277.1,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "7ddecbf0",
+                "call_id": "7ddecbf0-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:47.381+00:00",
+                "end_time": "2026-10-10T07:52:48.828+00:00",
+                "first_token_time": "2026-10-10T07:52:48.168+00:00",
+                "latency_ms": 1446.8,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 787.1
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "7ddecbf0",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "7ddecbf0"
+          }
+        },
+        {
+          "case": {
+            "category": "number_negation",
+            "history": [],
+            "query": "单次迁移超过 1000 个 slot 可以吗？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "1000",
+              "slot"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "redis_ops_004"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "Redis 集群单次迁移超过 1000 个 slot 可以吗？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "单次迁移超过 1000 个 slot 可以吗？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "Redis 集群单次迁移超过 1000 个 slot 可以吗？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_755899113211",
+                "args": {
+                  "query": "Redis 集群单次迁移超过 1000 个 slot 可以吗？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 688.2,
+                "source_ids": [
+                  "redis_ops_004"
+                ],
+                "chunk_ids": [
+                  "redis_ops_004"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "Redis 集群单次迁移超过 1000 个 slot 可以吗？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9996557052556503,
+                "first_retrieval_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003",
+                  "redis_ops_002",
+                  "redis_ops_005",
+                  "redis_003"
+                ]
+              }
+            ],
+            "answer": "不可以。按团队 Redis 运维规范，`redis-cli --cluster reshard` 做 slot 迁移时**单次迁移不超过 1000 个 slot**，并且只能在业务低峰期（凌晨 1:00–5:00）进行。\n\n如果一次需要迁移更多 slot，应拆分成多次、每次 ≤1000 个分批执行；扩容完成后还需观察 24 小时，确认各分片的内存和 QPS 已均衡。\n\nSources:\n- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)",
+            "answer_body": "不可以。按团队 Redis 运维规范，`redis-cli --cluster reshard` 做 slot 迁移时**单次迁移不超过 1000 个 slot**，并且只能在业务低峰期（凌晨 1:00–5:00）进行。\n\n如果一次需要迁移更多 slot，应拆分成多次、每次 ≤1000 个分批执行；扩容完成后还需观察 24 小时，确认各分片的内存和 QPS 已均衡。",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_004"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 8927.892083000017,
+              "e2e_ttft": 7285.917541000003,
+              "model_ttft": 1059.032290999994,
+              "query_understanding": 5531.0787079999955,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 5534.1550830000015
+            },
+            "stages": {
+              "query_understanding": 5531.0787079999955,
+              "query_embedding": 321.2499159999993,
+              "dense_retrieval": 8.748999999994567,
+              "sparse_retrieval": 5.371416999992107,
+              "rrf_fusion": 0.07854200001133904,
+              "hybrid_retrieval": 335.63316699999746,
+              "rerank": 351.3819579999904,
+              "retrieval_gate": 0.003707999979951637,
+              "build_tool_message": 0.08262499997613304,
+              "final_llm": 2700.008124999982,
+              "model_ttft": 1059.032290999994,
+              "e2e_ttft": 7285.917541000003,
+              "generation": 1640.9758339999883,
+              "total": 8927.892083000017
+            },
+            "llm_calls": [
+              {
+                "request_id": "59f21016",
+                "call_id": "59f21016-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:48.833+00:00",
+                "end_time": "2026-10-10T07:52:54.361+00:00",
+                "first_token_time": null,
+                "latency_ms": 5527.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "59f21016",
+                "call_id": "59f21016-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:54.365+00:00",
+                "end_time": "2026-10-10T07:52:54.685+00:00",
+                "first_token_time": null,
+                "latency_ms": 320.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "59f21016",
+                "call_id": "59f21016-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:55.057+00:00",
+                "end_time": "2026-10-10T07:52:57.756+00:00",
+                "first_token_time": "2026-10-10T07:52:56.116+00:00",
+                "latency_ms": 2699.0,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1059.0
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "59f21016",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "59f21016"
+          }
+        },
+        {
+          "case": {
+            "category": "no_rewrite_needed",
+            "history": [],
+            "query": "Redis 怎么扩容？",
+            "expected_intents": [
+              "KNOWLEDGE_SEARCH"
+            ],
+            "must_contain": [
+              "redis",
+              "扩容"
+            ],
+            "must_not_contain": [],
+            "relevant_chunk_ids": [
+              "redis_ops_003",
+              "redis_ops_004"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "Redis 怎么扩容？",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": 1.0
+          },
+          "run": {
+            "query": "Redis 怎么扩容？",
+            "mode": "query_understanding",
+            "intent": "KNOWLEDGE_SEARCH",
+            "qu_status": "ok",
+            "standalone_query": "Redis 怎么扩容？",
+            "candidate_tools": [
+              "search_knowledge_base",
+              "get_document",
+              "get_chunk"
+            ],
+            "qu_violations": [],
+            "tools_requested": [
+              "search_knowledge_base"
+            ],
+            "tool_log": [
+              {
+                "name": "search_knowledge_base",
+                "tool_call_id": "qu_7b1dcf4d7d71",
+                "args": {
+                  "query": "Redis 怎么扩容？"
+                },
+                "args_valid": true,
+                "success": true,
+                "error_code": null,
+                "retrieval_status": "FOUND",
+                "latency_ms": 641.6,
+                "source_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003"
+                ],
+                "chunk_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003"
+                ],
+                "document_ids": [
+                  "redis_ops"
+                ],
+                "dispatched_by": "query_understanding",
+                "query_source": "standalone_query",
+                "final_query": "Redis 怎么扩容？",
+                "retry_count": 0,
+                "gate_level": "high",
+                "top_rerank_score": 0.9996798070579626,
+                "first_retrieval_ids": [
+                  "redis_ops_004",
+                  "redis_ops_003",
+                  "redis_ops_001",
+                  "redis_001",
+                  "redis_ops_005"
+                ]
+              }
+            ],
+            "answer": "Redis 扩容方式如下：\n\n## 触发条件\n满足以下任一条件时，需要发起扩容申请：\n- 任一分片的内存使用率**连续 3 天超过 70%**\n- 单分片 QPS 峰值**超过 8 万**\n\n## 扩容步骤\n通过**增加分片**完成扩容：\n1. 先加入新的一主一从节点\n2. 使用 `redis-cli --cluster reshard` 迁移 slot\n\n## 注意事项\n- slot 迁移只能在**业务低峰期（凌晨 1:00–5:00）**进行\n- 单次迁移不超过 **1000 个 slot**\n- 扩容完成后需**观察 24 小时**，确认各分片的内存和 QPS 已经均衡\n\nSources:\n- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)\n- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)",
+            "answer_body": "Redis 扩容方式如下：\n\n## 触发条件\n满足以下任一条件时，需要发起扩容申请：\n- 任一分片的内存使用率**连续 3 天超过 70%**\n- 单分片 QPS 峰值**超过 8 万**\n\n## 扩容步骤\n通过**增加分片**完成扩容：\n1. 先加入新的一主一从节点\n2. 使用 `redis-cli --cluster reshard` 迁移 slot\n\n## 注意事项\n- slot 迁移只能在**业务低峰期（凌晨 1:00–5:00）**进行\n- 单次迁移不超过 **1000 个 slot**\n- 扩容完成后需**观察 24 小时**，确认各分片的内存和 QPS 已经均衡",
+            "final_answer_kind": "llm",
+            "printed_sources": [
+              "redis_ops_004",
+              "redis_ops_003"
+            ],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 6587.5400829999935,
+              "e2e_ttft": 4098.177166999989,
+              "model_ttft": 1160.6108750000317,
+              "query_understanding": 2288.266875000005,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": 2291.437792000039
+            },
+            "stages": {
+              "query_understanding": 2288.266875000005,
+              "query_embedding": 305.5092919999538,
+              "dense_retrieval": 6.915832999993654,
+              "sparse_retrieval": 3.8332499999569336,
+              "rrf_fusion": 0.06591600003957865,
+              "hybrid_retrieval": 316.45929100000103,
+              "rerank": 323.3411670000237,
+              "retrieval_gate": 0.0041249999753745215,
+              "build_tool_message": 0.09566699998231343,
+              "final_llm": 3649.187374999997,
+              "model_ttft": 1160.6108750000317,
+              "e2e_ttft": 4098.177166999989,
+              "generation": 2488.576499999965,
+              "total": 6587.5400829999935
+            },
+            "llm_calls": [
+              {
+                "request_id": "138d6161",
+                "call_id": "138d6161-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:52:57.761+00:00",
+                "end_time": "2026-10-10T07:53:00.047+00:00",
+                "first_token_time": null,
+                "latency_ms": 2285.7,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "138d6161",
+                "call_id": "138d6161-02",
+                "phase": "query_embedding",
+                "model": "qwen3.7-text-embedding-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:53:00.051+00:00",
+                "end_time": "2026-10-10T07:53:00.356+00:00",
+                "first_token_time": null,
+                "latency_ms": 304.8,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 5.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "138d6161",
+                "call_id": "138d6161-03",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:53:00.696+00:00",
+                "end_time": "2026-10-10T07:53:04.344+00:00",
+                "first_token_time": "2026-10-10T07:53:01.856+00:00",
+                "latency_ms": 3648.2,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 1160.5
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "138d6161",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "138d6161"
+          }
+        },
+        {
+          "case": {
+            "category": "topic_switch",
+            "history": [
+              [
+                "Redis 怎么部署？",
+                "生产环境统一部署为 Cluster 模式：3 主 3 从。"
+              ]
+            ],
+            "query": "用一句话介绍一下 Python 这门编程语言。",
+            "expected_intents": [
+              "DIRECT"
+            ],
+            "must_contain": [
+              "python"
+            ],
+            "must_not_contain": [
+              "redis"
+            ]
+          },
+          "score": {
+            "intent_ok": true,
+            "query_text": "用一句话介绍一下 Python 这门编程语言。",
+            "query_ok": true,
+            "id_ok": null,
+            "first_retrieval_recall@5": null
+          },
+          "run": {
+            "query": "用一句话介绍一下 Python 这门编程语言。",
+            "mode": "query_understanding",
+            "intent": "DIRECT",
+            "qu_status": "ok",
+            "standalone_query": "用一句话介绍一下 Python 这门编程语言。",
+            "candidate_tools": [],
+            "qu_violations": [],
+            "tools_requested": [],
+            "tool_log": [],
+            "answer": "Python 是一种解释型、面向对象的高级编程语言，以其简洁易读的语法和强大的标准库著称，广泛应用于 Web 开发、数据科学、人工智能及自动化运维等领域。",
+            "answer_body": "Python 是一种解释型、面向对象的高级编程语言，以其简洁易读的语法和强大的标准库著称，广泛应用于 Web 开发、数据科学、人工智能及自动化运维等领域。",
+            "final_answer_kind": "llm",
+            "printed_sources": [],
+            "sources_not_from_tools": [],
+            "hallucinated_ids_in_answer": [],
+            "latency": {
+              "total": 3240.10262500002,
+              "e2e_ttft": 2665.393375000008,
+              "model_ttft": 365.0236659999564,
+              "query_understanding": 2297.3623749999774,
+              "agent_decision": null,
+              "first_agent_decision": null,
+              "tool_selection": null
+            },
+            "stages": {
+              "query_understanding": 2297.3623749999774,
+              "final_llm": 938.9105409999843,
+              "model_ttft": 365.0236659999564,
+              "e2e_ttft": 2665.393375000008,
+              "generation": 573.8868750000279,
+              "total": 3240.10262500002
+            },
+            "llm_calls": [
+              {
+                "request_id": "6e3ec53e",
+                "call_id": "6e3ec53e-01",
+                "phase": "query_understanding",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:53:04.349+00:00",
+                "end_time": "2026-10-10T07:53:06.636+00:00",
+                "first_token_time": null,
+                "latency_ms": 2287.3,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 12.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": null
+              },
+              {
+                "request_id": "6e3ec53e",
+                "call_id": "6e3ec53e-02",
+                "phase": "final_answer",
+                "model": "qwen3.8-flash",
+                "attempt": 1,
+                "start_time": "2026-10-10T07:53:06.646+00:00",
+                "end_time": "2026-10-10T07:53:07.584+00:00",
+                "first_token_time": "2026-10-10T07:53:07.011+00:00",
+                "latency_ms": 937.9,
+                "status": "success",
+                "error_type": null,
+                "error_message": null,
+                "timeout_s": 10.0,
+                "retry": false,
+                "retry_reason": null,
+                "extra": {},
+                "type": "llm_attempt",
+                "first_token_ms": 364.9
+              }
+            ],
+            "events": [
+              {
+                "type": "event",
+                "event": "structured_parse",
+                "request_id": "6e3ec53e",
+                "phase": "query_understanding",
+                "schema": "QueryUnderstandingResult",
+                "status": "ok",
+                "recovered_by": "strict",
+                "reask": false,
+                "llm_requests": 1,
+                "error": null,
+                "raw": null
+              }
+            ],
+            "request_id": "6e3ec53e"
+          }
+        }
+      ]
+    }
+  }
+}

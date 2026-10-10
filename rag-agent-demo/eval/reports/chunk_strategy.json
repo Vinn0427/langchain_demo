@@ -1,0 +1,1458 @@
+{
+  "versions": {
+    "chat_model": "qwen3.8-flash",
+    "embedding_model": "qwen3.7-text-embedding-flash",
+    "embedding_dimension": 1024,
+    "reranker_model": "BAAI/bge-reranker-base",
+    "bm25": {
+      "version": "bm25-jieba-md5-v1",
+      "k1": 1.2,
+      "b": 0.75
+    },
+    "chunk_strategy": "C",
+    "chunk_strategy_version": "heading-v1",
+    "retrieval_text_version": "rt-v1",
+    "routing_mode": "query_understanding",
+    "structured_output_method": "json_schema",
+    "prompt_versions": {
+      "agent": "agent-v4.1",
+      "query_understanding": "qu-v1.1",
+      "grader": "grader-v2",
+      "rewrite": "retrieval-rewrite-v1",
+      "tool_schema": "tools-v1"
+    },
+    "gate": {
+      "high": 0.9,
+      "low": 0.15
+    },
+    "timeouts": {
+      "query_understanding": 12.0,
+      "agent_decision": 12.0,
+      "grader": 5.0,
+      "rewrite": 5.0,
+      "final_answer": 10.0,
+      "embedding": 5.0,
+      "tool": 5.0,
+      "request_deadline": 30.0,
+      "llm_max_attempts": 2
+    },
+    "collection": "rag_demo_v4_c_0073c1ee",
+    "alias": "rag_demo",
+    "packages": {
+      "langchain-core": "0.3.86",
+      "langchain-openai": "0.3.35",
+      "langgraph": "0.6.11",
+      "openai": "2.48.0",
+      "qdrant-client": "1.16.1",
+      "fastembed": "0.7.4",
+      "jieba": "0.42.1"
+    }
+  },
+  "dataset_n": 65,
+  "strategies": {
+    "A": {
+      "collection": "rag_eval_chunk_a_24aaaa92",
+      "index_stats": {
+        "collection": "rag_eval_chunk_a_24aaaa92",
+        "mode": "incremental",
+        "documents_scanned": 9,
+        "added": [],
+        "modified": [],
+        "unchanged": [
+          "agent",
+          "api",
+          "deploy",
+          "mysql",
+          "mysql_ops",
+          "oncall",
+          "rag",
+          "redis",
+          "redis_ops"
+        ],
+        "deleted": [],
+        "chunks_chunked": 0,
+        "chunks_embedded": 0,
+        "chunks_vector_reused": 0,
+        "embedding_requests": 0,
+        "points_upserted": 0,
+        "points_deleted": 0,
+        "bm25_avgdl_frozen": 41.581,
+        "bm25_avgdl_actual": 41.581,
+        "bm25_avgdl_drift": 0.0,
+        "points_in_collection": 31,
+        "timings": {
+          "total": 0.002920374999999975
+        }
+      },
+      "analysis": {
+        "raw_text": {
+          "field": "raw_text",
+          "chunk_count": 31,
+          "token_avg": 53.8,
+          "token_p50": 52.0,
+          "token_p95": 96.5,
+          "token_min": 16,
+          "token_max": 123,
+          "char_avg": 111.9,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.161,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_004",
+            "mysql_ops_005",
+            "mysql_ops_006",
+            "redis_ops_003"
+          ],
+          "too_long_chunks": []
+        },
+        "retrieval_text": {
+          "field": "retrieval_text",
+          "chunk_count": 31,
+          "token_avg": 53.8,
+          "token_p50": 52.0,
+          "token_p95": 96.5,
+          "token_min": 16,
+          "token_max": 123,
+          "char_avg": 111.9,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.161,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_004",
+            "mysql_ops_005",
+            "mysql_ops_006",
+            "redis_ops_003"
+          ],
+          "too_long_chunks": []
+        }
+      },
+      "eval": {
+        "n_labeled": 60,
+        "n_no_answer": 5,
+        "summary": {
+          "dense": {
+            "recall@1": 0.8444,
+            "recall@3": 0.925,
+            "recall@5": 0.95,
+            "mrr": 0.9352
+          },
+          "sparse": {
+            "recall@1": 0.7639,
+            "recall@3": 0.8944,
+            "recall@5": 0.9167,
+            "mrr": 0.8681
+          },
+          "hybrid_rrf": {
+            "recall@1": 0.8194,
+            "recall@3": 0.9306,
+            "recall@5": 0.9722,
+            "mrr": 0.9222
+          },
+          "hybrid_rerank": {
+            "recall@1": 0.7972,
+            "recall@3": 0.9333,
+            "recall@5": 0.9694,
+            "mrr": 0.9028
+          }
+        },
+        "by_category": {
+          "v3_basic": {
+            "n": 24,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 0.958,
+              "mrr": 0.938
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.969
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.979
+            }
+          },
+          "same_topic": {
+            "n": 12,
+            "dense": {
+              "recall@5": 0.917,
+              "mrr": 0.843
+            },
+            "sparse": {
+              "recall@5": 0.917,
+              "mrr": 0.715
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.84
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.84
+            }
+          },
+          "keyword_overlap": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "alias": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            }
+          },
+          "colloquial": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 0.867
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            }
+          },
+          "ambiguous": {
+            "n": 3,
+            "dense": {
+              "recall@5": 0.833,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 0.667,
+              "mrr": 0.833
+            },
+            "hybrid_rrf": {
+              "recall@5": 0.778,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.722,
+              "mrr": 0.75
+            }
+          },
+          "multi_doc": {
+            "n": 4,
+            "dense": {
+              "recall@5": 0.875,
+              "mrr": 0.875
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "exact_id": {
+            "n": 2,
+            "dense": {
+              "recall@5": 0.5,
+              "mrr": 0.25
+            },
+            "sparse": {
+              "recall@5": 0.0,
+              "mrr": 0.083
+            },
+            "hybrid_rrf": {
+              "recall@5": 0.5,
+              "mrr": 0.25
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.5,
+              "mrr": 0.167
+            }
+          }
+        },
+        "misses": [
+          {
+            "query": "大表加字段应该用什么工具？",
+            "expected": [
+              "mysql_003"
+            ],
+            "got_top3": [
+              "mysql_001",
+              "mysql_003",
+              "mysql_002"
+            ]
+          },
+          {
+            "query": "Redis 什么情况下需要扩容？",
+            "expected": [
+              "redis_ops_003"
+            ],
+            "got_top3": [
+              "redis_ops_004",
+              "redis_001",
+              "redis_ops_003"
+            ]
+          },
+          {
+            "query": "Redis 扩容的触发条件是什么？",
+            "expected": [
+              "redis_ops_003"
+            ],
+            "got_top3": [
+              "redis_ops_004",
+              "redis_ops_003",
+              "redis_003"
+            ]
+          },
+          {
+            "query": "MySQL 扩容的触发条件是什么？",
+            "expected": [
+              "mysql_ops_002"
+            ],
+            "got_top3": [
+              "redis_ops_003",
+              "mysql_ops_006",
+              "redis_ops_004"
+            ]
+          },
+          {
+            "query": "飞鸽是干什么用的？",
+            "expected": [
+              "oncall_002"
+            ],
+            "got_top3": [
+              "redis_001",
+              "oncall_002",
+              "deploy_001"
+            ]
+          },
+          {
+            "query": "上线以后发现 bug 咋整",
+            "expected": [
+              "deploy_003"
+            ],
+            "got_top3": [
+              "api_001",
+              "deploy_003",
+              "redis_ops_005"
+            ]
+          },
+          {
+            "query": "高可用是怎么保证的",
+            "expected": [
+              "mysql_ops_001",
+              "redis_ops_005",
+              "redis_ops_006"
+            ],
+            "got_top3": [
+              "mysql_001",
+              "redis_ops_003",
+              "oncall_002"
+            ]
+          },
+          {
+            "query": "redis_003 讲了什么？",
+            "expected": [
+              "redis_003"
+            ],
+            "got_top3": [
+              "redis_001",
+              "redis_002",
+              "redis_003"
+            ]
+          },
+          {
+            "query": "redis_ops_006 这个 chunk 的内容",
+            "expected": [
+              "redis_ops_006"
+            ],
+            "got_top3": [
+              "redis_001",
+              "redis_ops_001",
+              "rag_002"
+            ]
+          }
+        ],
+        "rerank_top1": {
+          "positive": {
+            "n": 60,
+            "min": 0.017,
+            "p50": 0.993,
+            "max": 1.0
+          },
+          "no_answer": {
+            "n": 5,
+            "min": 0.017,
+            "p50": 0.044,
+            "max": 0.972
+          },
+          "positive_raw": [
+            1.0,
+            0.987,
+            0.998,
+            0.998,
+            1.0,
+            1.0,
+            0.337,
+            0.991,
+            0.952,
+            0.999,
+            0.999,
+            0.969,
+            0.999,
+            0.996,
+            0.998,
+            0.997,
+            0.995,
+            0.993,
+            0.999,
+            0.999,
+            0.589,
+            0.99,
+            0.997,
+            0.996,
+            0.991,
+            0.999,
+            0.992,
+            0.998,
+            0.255,
+            0.995,
+            0.994,
+            0.991,
+            0.997,
+            0.99,
+            0.437,
+            0.86,
+            0.998,
+            1.0,
+            0.999,
+            1.0,
+            0.999,
+            0.977,
+            0.999,
+            0.999,
+            0.434,
+            0.017,
+            0.877,
+            0.205,
+            0.995,
+            0.69,
+            0.919,
+            0.878,
+            0.111,
+            0.915,
+            0.361,
+            0.88,
+            0.989,
+            0.996,
+            0.041,
+            0.043
+          ],
+          "no_answer_raw": [
+            0.017,
+            0.037,
+            0.528,
+            0.044,
+            0.972
+          ]
+        },
+        "latency": {
+          "query_embedding": {
+            "n": 60,
+            "avg": 133.8,
+            "p50": 109.1,
+            "p95": 208.6,
+            "max": 499.8
+          },
+          "dense_retrieval": {
+            "n": 60,
+            "avg": 5.9,
+            "p50": 5.8,
+            "p95": 7.4,
+            "max": 7.9
+          },
+          "sparse_retrieval": {
+            "n": 60,
+            "avg": 3.2,
+            "p50": 3.1,
+            "p95": 4.2,
+            "max": 4.9
+          },
+          "rrf_fusion": {
+            "n": 60,
+            "avg": 0.1,
+            "p50": 0.0,
+            "p95": 0.1,
+            "max": 0.2
+          },
+          "hybrid_retrieval": {
+            "n": 60,
+            "avg": 143.0,
+            "p50": 117.7,
+            "p95": 221.4,
+            "max": 512.6
+          },
+          "rerank": {
+            "n": 60,
+            "avg": 311.7,
+            "p50": 305.7,
+            "p95": 419.2,
+            "max": 426.9
+          },
+          "retrieval_total": {
+            "n": 60,
+            "avg": 454.8,
+            "p50": 432.8,
+            "p95": 546.1,
+            "max": 824.2
+          }
+        }
+      }
+    },
+    "B": {
+      "collection": "rag_eval_chunk_b_dbca7b7b",
+      "index_stats": {
+        "collection": "rag_eval_chunk_b_dbca7b7b",
+        "mode": "incremental",
+        "documents_scanned": 9,
+        "added": [],
+        "modified": [],
+        "unchanged": [
+          "agent",
+          "api",
+          "deploy",
+          "mysql",
+          "mysql_ops",
+          "oncall",
+          "rag",
+          "redis",
+          "redis_ops"
+        ],
+        "deleted": [],
+        "chunks_chunked": 0,
+        "chunks_embedded": 0,
+        "chunks_vector_reused": 0,
+        "embedding_requests": 0,
+        "points_upserted": 0,
+        "points_deleted": 0,
+        "bm25_avgdl_frozen": 47.387,
+        "bm25_avgdl_actual": 47.387,
+        "bm25_avgdl_drift": 0.0,
+        "points_in_collection": 31,
+        "timings": {
+          "total": 0.0036062090000008595
+        }
+      },
+      "analysis": {
+        "raw_text": {
+          "field": "raw_text",
+          "chunk_count": 31,
+          "token_avg": 53.8,
+          "token_p50": 52.0,
+          "token_p95": 96.5,
+          "token_min": 16,
+          "token_max": 123,
+          "char_avg": 111.9,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.161,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_004",
+            "mysql_ops_005",
+            "mysql_ops_006",
+            "redis_ops_003"
+          ],
+          "too_long_chunks": []
+        },
+        "retrieval_text": {
+          "field": "retrieval_text",
+          "chunk_count": 31,
+          "token_avg": 60.5,
+          "token_p50": 59.0,
+          "token_p95": 103.5,
+          "token_min": 23,
+          "token_max": 132,
+          "char_avg": 131.6,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.129,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_004",
+            "mysql_ops_005",
+            "mysql_ops_006"
+          ],
+          "too_long_chunks": []
+        }
+      },
+      "eval": {
+        "n_labeled": 60,
+        "n_no_answer": 5,
+        "summary": {
+          "dense": {
+            "recall@1": 0.8861,
+            "recall@3": 0.9639,
+            "recall@5": 0.9833,
+            "mrr": 0.9688
+          },
+          "sparse": {
+            "recall@1": 0.8417,
+            "recall@3": 0.9278,
+            "recall@5": 0.9278,
+            "mrr": 0.9167
+          },
+          "hybrid_rrf": {
+            "recall@1": 0.8694,
+            "recall@3": 0.9556,
+            "recall@5": 0.9778,
+            "mrr": 0.9542
+          },
+          "hybrid_rerank": {
+            "recall@1": 0.8639,
+            "recall@3": 0.9556,
+            "recall@5": 0.9611,
+            "mrr": 0.9389
+          }
+        },
+        "by_category": {
+          "v3_basic": {
+            "n": 24,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 0.979
+            },
+            "sparse": {
+              "recall@5": 0.958,
+              "mrr": 0.938
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.969
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.979
+            }
+          },
+          "same_topic": {
+            "n": 12,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "keyword_overlap": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "alias": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            }
+          },
+          "colloquial": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 0.867
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "ambiguous": {
+            "n": 3,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 0.556,
+              "mrr": 0.667
+            },
+            "hybrid_rrf": {
+              "recall@5": 0.889,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.889,
+              "mrr": 0.778
+            }
+          },
+          "multi_doc": {
+            "n": 4,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "exact_id": {
+            "n": 2,
+            "dense": {
+              "recall@5": 0.5,
+              "mrr": 0.312
+            },
+            "sparse": {
+              "recall@5": 0.0,
+              "mrr": 0.083
+            },
+            "hybrid_rrf": {
+              "recall@5": 0.5,
+              "mrr": 0.25
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.0,
+              "mrr": 0.0
+            }
+          }
+        },
+        "misses": [
+          {
+            "query": "大表加字段应该用什么工具？",
+            "expected": [
+              "mysql_003"
+            ],
+            "got_top3": [
+              "mysql_001",
+              "mysql_003",
+              "agent_002"
+            ]
+          },
+          {
+            "query": "飞鸽是干什么用的？",
+            "expected": [
+              "oncall_002"
+            ],
+            "got_top3": [
+              "redis_001",
+              "oncall_002",
+              "redis_ops_001"
+            ]
+          },
+          {
+            "query": "高可用是怎么保证的",
+            "expected": [
+              "mysql_ops_001",
+              "redis_ops_005",
+              "redis_ops_006"
+            ],
+            "got_top3": [
+              "mysql_001",
+              "oncall_002",
+              "redis_ops_006"
+            ]
+          },
+          {
+            "query": "redis_003 讲了什么？",
+            "expected": [
+              "redis_003"
+            ],
+            "got_top3": [
+              "redis_001",
+              "redis_ops_001",
+              "redis_ops_005"
+            ]
+          },
+          {
+            "query": "redis_ops_006 这个 chunk 的内容",
+            "expected": [
+              "redis_ops_006"
+            ],
+            "got_top3": [
+              "redis_ops_004",
+              "redis_ops_003",
+              "redis_001"
+            ]
+          }
+        ],
+        "rerank_top1": {
+          "positive": {
+            "n": 60,
+            "min": 0.001,
+            "p50": 0.994,
+            "max": 1.0
+          },
+          "no_answer": {
+            "n": 5,
+            "min": 0.001,
+            "p50": 0.079,
+            "max": 0.773
+          },
+          "positive_raw": [
+            1.0,
+            0.968,
+            0.997,
+            0.998,
+            0.922,
+            0.999,
+            0.191,
+            0.981,
+            0.831,
+            0.997,
+            0.999,
+            0.884,
+            0.999,
+            0.993,
+            0.993,
+            0.998,
+            0.982,
+            0.992,
+            0.997,
+            0.999,
+            0.386,
+            0.919,
+            0.994,
+            0.998,
+            0.985,
+            1.0,
+            0.999,
+            0.998,
+            0.997,
+            0.994,
+            0.997,
+            0.999,
+            0.998,
+            0.999,
+            1.0,
+            1.0,
+            0.993,
+            0.999,
+            0.999,
+            0.999,
+            0.999,
+            0.927,
+            0.999,
+            0.998,
+            0.341,
+            0.001,
+            0.918,
+            0.2,
+            0.973,
+            0.537,
+            0.866,
+            0.421,
+            0.018,
+            0.989,
+            0.158,
+            0.914,
+            0.987,
+            0.996,
+            0.029,
+            0.013
+          ],
+          "no_answer_raw": [
+            0.001,
+            0.004,
+            0.228,
+            0.079,
+            0.773
+          ]
+        },
+        "latency": {
+          "query_embedding": {
+            "n": 60,
+            "avg": 135.2,
+            "p50": 115.9,
+            "p95": 216.4,
+            "max": 240.7
+          },
+          "dense_retrieval": {
+            "n": 60,
+            "avg": 6.2,
+            "p50": 6.1,
+            "p95": 7.2,
+            "max": 8.5
+          },
+          "sparse_retrieval": {
+            "n": 60,
+            "avg": 3.4,
+            "p50": 3.3,
+            "p95": 4.5,
+            "max": 7.3
+          },
+          "rrf_fusion": {
+            "n": 60,
+            "avg": 0.1,
+            "p50": 0.0,
+            "p95": 0.1,
+            "max": 0.6
+          },
+          "hybrid_retrieval": {
+            "n": 60,
+            "avg": 145.0,
+            "p50": 125.9,
+            "p95": 229.7,
+            "max": 250.9
+          },
+          "rerank": {
+            "n": 60,
+            "avg": 352.9,
+            "p50": 345.7,
+            "p95": 468.1,
+            "max": 476.9
+          },
+          "retrieval_total": {
+            "n": 60,
+            "avg": 497.9,
+            "p50": 475.1,
+            "p95": 606.1,
+            "max": 699.6
+          }
+        }
+      }
+    },
+    "C": {
+      "collection": "rag_eval_chunk_c_0073c1ee",
+      "index_stats": {
+        "collection": "rag_eval_chunk_c_0073c1ee",
+        "mode": "incremental",
+        "documents_scanned": 9,
+        "added": [],
+        "modified": [],
+        "unchanged": [
+          "agent",
+          "api",
+          "deploy",
+          "mysql",
+          "mysql_ops",
+          "oncall",
+          "rag",
+          "redis",
+          "redis_ops"
+        ],
+        "deleted": [],
+        "chunks_chunked": 0,
+        "chunks_embedded": 0,
+        "chunks_vector_reused": 0,
+        "embedding_requests": 0,
+        "points_upserted": 0,
+        "points_deleted": 0,
+        "bm25_avgdl_frozen": 47.871,
+        "bm25_avgdl_actual": 47.871,
+        "bm25_avgdl_drift": 0.0,
+        "points_in_collection": 31,
+        "timings": {
+          "total": 0.003738832999999886
+        }
+      },
+      "analysis": {
+        "raw_text": {
+          "field": "raw_text",
+          "chunk_count": 31,
+          "token_avg": 53.8,
+          "token_p50": 52.0,
+          "token_p95": 96.5,
+          "token_min": 16,
+          "token_max": 123,
+          "char_avg": 111.9,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.161,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_004",
+            "mysql_ops_005",
+            "mysql_ops_006",
+            "redis_ops_003"
+          ],
+          "too_long_chunks": []
+        },
+        "retrieval_text": {
+          "field": "retrieval_text",
+          "chunk_count": 31,
+          "token_avg": 61.4,
+          "token_p50": 59.0,
+          "token_p95": 103.5,
+          "token_min": 25,
+          "token_max": 132,
+          "char_avg": 133.6,
+          "too_short_threshold": 32,
+          "too_long_threshold": 400,
+          "too_short_ratio": 0.097,
+          "too_long_ratio": 0.0,
+          "too_short_chunks": [
+            "mysql_ops_002",
+            "mysql_ops_005",
+            "mysql_ops_006"
+          ],
+          "too_long_chunks": []
+        }
+      },
+      "eval": {
+        "n_labeled": 60,
+        "n_no_answer": 5,
+        "summary": {
+          "dense": {
+            "recall@1": 0.8861,
+            "recall@3": 0.975,
+            "recall@5": 0.9833,
+            "mrr": 0.9688
+          },
+          "sparse": {
+            "recall@1": 0.8472,
+            "recall@3": 0.9333,
+            "recall@5": 0.9333,
+            "mrr": 0.925
+          },
+          "hybrid_rrf": {
+            "recall@1": 0.8694,
+            "recall@3": 0.9556,
+            "recall@5": 0.9833,
+            "mrr": 0.9542
+          },
+          "hybrid_rerank": {
+            "recall@1": 0.8694,
+            "recall@3": 0.9611,
+            "recall@5": 0.9778,
+            "mrr": 0.9533
+          }
+        },
+        "by_category": {
+          "v3_basic": {
+            "n": 24,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 0.979
+            },
+            "sparse": {
+              "recall@5": 0.958,
+              "mrr": 0.938
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.969
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.979
+            }
+          },
+          "same_topic": {
+            "n": 12,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "keyword_overlap": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "alias": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            }
+          },
+          "colloquial": {
+            "n": 5,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 0.867
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 0.9
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "ambiguous": {
+            "n": 3,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 0.667,
+              "mrr": 0.833
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.889,
+              "mrr": 1.0
+            }
+          },
+          "multi_doc": {
+            "n": 4,
+            "dense": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "sparse": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rrf": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            },
+            "hybrid_rerank": {
+              "recall@5": 1.0,
+              "mrr": 1.0
+            }
+          },
+          "exact_id": {
+            "n": 2,
+            "dense": {
+              "recall@5": 0.5,
+              "mrr": 0.312
+            },
+            "sparse": {
+              "recall@5": 0.0,
+              "mrr": 0.083
+            },
+            "hybrid_rrf": {
+              "recall@5": 0.5,
+              "mrr": 0.25
+            },
+            "hybrid_rerank": {
+              "recall@5": 0.5,
+              "mrr": 0.1
+            }
+          }
+        },
+        "misses": [
+          {
+            "query": "大表加字段应该用什么工具？",
+            "expected": [
+              "mysql_003"
+            ],
+            "got_top3": [
+              "mysql_001",
+              "mysql_003",
+              "agent_002"
+            ]
+          },
+          {
+            "query": "飞鸽是干什么用的？",
+            "expected": [
+              "oncall_002"
+            ],
+            "got_top3": [
+              "redis_001",
+              "oncall_002",
+              "redis_ops_001"
+            ]
+          },
+          {
+            "query": "redis_003 讲了什么？",
+            "expected": [
+              "redis_003"
+            ],
+            "got_top3": [
+              "redis_001",
+              "redis_ops_006",
+              "redis_ops_005"
+            ]
+          },
+          {
+            "query": "redis_ops_006 这个 chunk 的内容",
+            "expected": [
+              "redis_ops_006"
+            ],
+            "got_top3": [
+              "redis_ops_004",
+              "redis_ops_001",
+              "redis_001"
+            ]
+          }
+        ],
+        "rerank_top1": {
+          "positive": {
+            "n": 60,
+            "min": 0.002,
+            "p50": 0.995,
+            "max": 1.0
+          },
+          "no_answer": {
+            "n": 5,
+            "min": 0.004,
+            "p50": 0.079,
+            "max": 0.795
+          },
+          "positive_raw": [
+            1.0,
+            0.968,
+            0.997,
+            0.998,
+            0.922,
+            0.999,
+            0.191,
+            0.981,
+            0.831,
+            0.997,
+            0.999,
+            0.884,
+            0.999,
+            0.993,
+            0.993,
+            0.998,
+            0.982,
+            0.992,
+            0.997,
+            0.999,
+            0.386,
+            0.919,
+            0.994,
+            0.998,
+            0.985,
+            1.0,
+            0.999,
+            0.998,
+            0.998,
+            0.997,
+            0.998,
+            1.0,
+            0.997,
+            0.999,
+            1.0,
+            1.0,
+            0.991,
+            0.999,
+            1.0,
+            1.0,
+            0.999,
+            0.927,
+            0.999,
+            0.998,
+            0.341,
+            0.002,
+            0.918,
+            0.2,
+            0.973,
+            0.51,
+            0.852,
+            0.482,
+            0.196,
+            0.996,
+            0.158,
+            0.9,
+            0.987,
+            0.996,
+            0.029,
+            0.016
+          ],
+          "no_answer_raw": [
+            0.004,
+            0.004,
+            0.258,
+            0.079,
+            0.795
+          ]
+        },
+        "latency": {
+          "query_embedding": {
+            "n": 60,
+            "avg": 129.9,
+            "p50": 114.7,
+            "p95": 202.2,
+            "max": 220.4
+          },
+          "dense_retrieval": {
+            "n": 60,
+            "avg": 5.7,
+            "p50": 5.7,
+            "p95": 7.1,
+            "max": 9.0
+          },
+          "sparse_retrieval": {
+            "n": 60,
+            "avg": 3.3,
+            "p50": 3.1,
+            "p95": 4.2,
+            "max": 6.7
+          },
+          "rrf_fusion": {
+            "n": 60,
+            "avg": 0.1,
+            "p50": 0.0,
+            "p95": 0.1,
+            "max": 0.7
+          },
+          "hybrid_retrieval": {
+            "n": 60,
+            "avg": 139.1,
+            "p50": 123.3,
+            "p95": 213.6,
+            "max": 231.2
+          },
+          "rerank": {
+            "n": 60,
+            "avg": 371.0,
+            "p50": 359.4,
+            "p95": 484.3,
+            "max": 504.9
+          },
+          "retrieval_total": {
+            "n": 60,
+            "avg": 510.1,
+            "p50": 492.5,
+            "p95": 634.5,
+            "max": 701.8
+          }
+        }
+      }
+    }
+  },
+  "selected": "C",
+  "selection_rule": "max(hybrid_rerank MRR, hybrid_rerank Recall@1, hybrid_rrf MRR)"
+}

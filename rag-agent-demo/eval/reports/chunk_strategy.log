@@ -1,0 +1,97 @@
+
+[Chunk A] collection=rag_eval_chunk_a_24aaaa92 index_mode=full embedded=31 skipped=0 docs
+
+========== Strategy A (n_labeled=60) ==========
+stage              Recall@1   Recall@3   Recall@5      MRR
+dense                 0.844      0.925      0.950    0.935
+sparse                0.764      0.894      0.917    0.868
+hybrid_rrf            0.819      0.931      0.972    0.922
+hybrid_rerank         0.797      0.933      0.969    0.903
+
+[Chunk B] collection=rag_eval_chunk_b_dbca7b7b index_mode=full embedded=31 skipped=0 docs
+
+========== Strategy B (n_labeled=60) ==========
+stage              Recall@1   Recall@3   Recall@5      MRR
+dense                 0.886      0.964      0.983    0.969
+sparse                0.842      0.928      0.928    0.917
+hybrid_rrf            0.869      0.956      0.978    0.954
+hybrid_rerank         0.864      0.956      0.961    0.939
+
+[Chunk C] collection=rag_eval_chunk_c_0073c1ee index_mode=full embedded=31 skipped=0 docs
+
+========== Strategy C (n_labeled=60) ==========
+stage              Recall@1   Recall@3   Recall@5      MRR
+dense                 0.886      0.975      0.983    0.969
+sparse                0.847      0.933      0.933    0.925
+hybrid_rrf            0.869      0.956      0.983    0.954
+hybrid_rerank         0.869      0.961      0.978    0.953
+
+========== Chunk Analysis (raw_text, jieba tokens) ==========
+chunk_count=31  avg=53.8  p50=52.0  p95=96.5  min=16  max=123
+too_short(<32) ratio=0.161 ['mysql_ops_002', 'mysql_ops_004', 'mysql_ops_005', 'mysql_ops_006', 'redis_ops_003']
+too_long(>400) ratio=0.0 []
+retrieval_text A: avg=53.8 p50=52.0 p95=96.5 too_short_ratio=0.161
+retrieval_text B: avg=60.5 p50=59.0 p95=103.5 too_short_ratio=0.129
+retrieval_text C: avg=61.4 p50=59.0 p95=103.5 too_short_ratio=0.097
+
+========== Chunk Strategy Comparison ==========
+stage           metric             A        B        C
+dense           recall@1       0.844    0.886    0.886
+dense           recall@3       0.925    0.964    0.975
+dense           recall@5       0.950    0.983    0.983
+dense           mrr            0.935    0.969    0.969
+sparse          recall@1       0.764    0.842    0.847
+sparse          recall@3       0.894    0.928    0.933
+sparse          recall@5       0.917    0.928    0.933
+sparse          mrr            0.868    0.917    0.925
+hybrid_rrf      recall@1       0.819    0.869    0.869
+hybrid_rrf      recall@3       0.931    0.956    0.956
+hybrid_rrf      recall@5       0.972    0.978    0.983
+hybrid_rrf      mrr            0.922    0.954    0.954
+hybrid_rerank   recall@1       0.797    0.864    0.869
+hybrid_rerank   recall@3       0.933    0.956    0.961
+hybrid_rerank   recall@5       0.969    0.961    0.978
+hybrid_rerank   mrr            0.903    0.939    0.953
+
+---------- hybrid_rerank MRR by category ----------
+category             n        A        B        C
+v3_basic            24    0.979    0.979    0.979
+same_topic          12    0.840    1.000    1.000
+keyword_overlap      5    1.000    1.000    1.000
+alias                5    0.900    0.900    0.900
+colloquial           5    0.900    1.000    1.000
+ambiguous            3    0.750    0.778    1.000
+multi_doc            4    1.000    1.000    1.000
+exact_id             2    0.167    0.000    0.100
+
+---------- rerank top1 score (Gate 校准参考) ----------
+A: positive {'n': 60, 'min': 0.017, 'p50': 0.993, 'max': 1.0}  no_answer {'n': 5, 'min': 0.017, 'p50': 0.044, 'max': 0.972}
+B: positive {'n': 60, 'min': 0.001, 'p50': 0.994, 'max': 1.0}  no_answer {'n': 5, 'min': 0.001, 'p50': 0.079, 'max': 0.773}
+C: positive {'n': 60, 'min': 0.002, 'p50': 0.995, 'max': 1.0}  no_answer {'n': 5, 'min': 0.004, 'p50': 0.079, 'max': 0.795}
+
+[A] hybrid_rerank Top-1 未命中 9 条：
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'mysql_002']
+  Redis 什么情况下需要扩容？  expected=['redis_ops_003']  got=['redis_ops_004', 'redis_001', 'redis_ops_003']
+  Redis 扩容的触发条件是什么？  expected=['redis_ops_003']  got=['redis_ops_004', 'redis_ops_003', 'redis_003']
+  MySQL 扩容的触发条件是什么？  expected=['mysql_ops_002']  got=['redis_ops_003', 'mysql_ops_006', 'redis_ops_004']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'deploy_001']
+  上线以后发现 bug 咋整  expected=['deploy_003']  got=['api_001', 'deploy_003', 'redis_ops_005']
+  高可用是怎么保证的  expected=['mysql_ops_001', 'redis_ops_005', 'redis_ops_006']  got=['mysql_001', 'redis_ops_003', 'oncall_002']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_002', 'redis_003']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_001', 'redis_ops_001', 'rag_002']
+
+[B] hybrid_rerank Top-1 未命中 5 条：
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'agent_002']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'redis_ops_001']
+  高可用是怎么保证的  expected=['mysql_ops_001', 'redis_ops_005', 'redis_ops_006']  got=['mysql_001', 'oncall_002', 'redis_ops_006']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_ops_001', 'redis_ops_005']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_ops_004', 'redis_ops_003', 'redis_001']
+
+[C] hybrid_rerank Top-1 未命中 4 条：
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'agent_002']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'redis_ops_001']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_ops_006', 'redis_ops_005']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_ops_004', 'redis_ops_001', 'redis_001']
+
+[Decision] rule=max(hybrid_rerank MRR, hybrid_rerank Recall@1, hybrid_rrf MRR) → selected strategy C  (current config CHUNK_STRATEGY=C)
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/chunk_strategy.json

@@ -1,0 +1,250 @@
+/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/checkpoint/base/__init__.py:18: LangChainPendingDeprecationWarning: The default value of `allowed_objects` will change in a future version. Pass an explicit value (e.g., allowed_objects='messages' or allowed_objects='core') to suppress this warning.
+  from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+
+[Regression] 1/7 Retrieval Eval
+
+[Regression] 2/7 Chunk Strategy Eval
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'mysql_002']
+  Redis 什么情况下需要扩容？  expected=['redis_ops_003']  got=['redis_ops_004', 'redis_001', 'redis_ops_003']
+  Redis 扩容的触发条件是什么？  expected=['redis_ops_003']  got=['redis_ops_004', 'redis_ops_003', 'redis_003']
+  MySQL 扩容的触发条件是什么？  expected=['mysql_ops_002']  got=['redis_ops_003', 'mysql_ops_006', 'redis_ops_004']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'deploy_001']
+  上线以后发现 bug 咋整  expected=['deploy_003']  got=['api_001', 'deploy_003', 'redis_ops_005']
+  高可用是怎么保证的  expected=['mysql_ops_001', 'redis_ops_005', 'redis_ops_006']  got=['mysql_001', 'redis_ops_003', 'oncall_002']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_002', 'redis_003']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_001', 'redis_ops_001', 'rag_002']
+
+[B] hybrid_rerank Top-1 未命中 5 条：
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'agent_002']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'redis_ops_001']
+  高可用是怎么保证的  expected=['mysql_ops_001', 'redis_ops_005', 'redis_ops_006']  got=['mysql_001', 'oncall_002', 'redis_ops_006']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_ops_001', 'redis_ops_005']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_ops_004', 'redis_ops_003', 'redis_001']
+
+[C] hybrid_rerank Top-1 未命中 4 条：
+  大表加字段应该用什么工具？  expected=['mysql_003']  got=['mysql_001', 'mysql_003', 'agent_002']
+  飞鸽是干什么用的？  expected=['oncall_002']  got=['redis_001', 'oncall_002', 'redis_ops_001']
+  redis_003 讲了什么？  expected=['redis_003']  got=['redis_001', 'redis_ops_006', 'redis_ops_005']
+  redis_ops_006 这个 chunk 的内容  expected=['redis_ops_006']  got=['redis_ops_004', 'redis_ops_001', 'redis_001']
+
+[Decision] rule=max(hybrid_rerank MRR, hybrid_rerank Recall@1, hybrid_rrf MRR) → selected strategy C  (current config CHUNK_STRATEGY=C)
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/chunk_strategy.json
+
+[Regression] 3/7 Incremental Verification
+== Step 5: 新增 faq.md
+[Index] agent.md unchanged → skipped
+[Index] deploy.md unchanged → skipped
+[Index] faq.md added → 1 chunks re-chunked, 1 embedded, 0 dense vectors reused (content_hash unchanged)
+[Index] mysql.md unchanged → skipped
+[Index] mysql_ops.md unchanged → skipped
+[Index] oncall.md unchanged → skipped
+[Index] rag.md unchanged → skipped
+[Index] redis.md unchanged → skipped
+[Index] redis_ops.md unchanged → skipped
+  [PASS] 新增文件：chunk → embedding → upsert → manifest: added=['faq'] embedded=1
+
+== Step 6: 增量结果 vs 同一冻结 avgdl 的全量重建
+  [PASS] point 集合一致: incr=31 full=31
+  [PASS] payload 逐 point 一致: diff=[]
+  [PASS] BM25 sparse vector 逐 point 一致: diff=[]
+  [PASS] dense 向量与全量重建一致（Provider 噪声范围内，cos>0.995）: min cosine=0.997346
+  [PASS] Qdrant BM25 检索分数逐 query 一致（IDF 无残留旧版本）: 65/65 queries identical
+  [INFO] 对照组（Qdrant 默认 optimizer，写入并删除临时 point 后）：63/65 queries 的 BM25 分数与全量重建不同 —— 已删除的 point 仍计入 IDF 统计
+
+== Step 7: pipeline_fingerprint 变化时不能 skip
+  [PASS] fingerprint 变化 → 目标 collection 名变化（build() 会走 Blue-Green）: 0073c1eea2d8defb → 20e46ae5e67d7ddb
+  [PASS] file_hash 不变但 fingerprint 变化：全部文件重新处理: modified=9 unchanged=0
+
+[Verify] 19/19 checks passed → /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/incremental_verification.json
+
+[Regression] 4/7 Query Understanding Eval
+
+[QueryEval] mode=query_understanding n=17
+  [ 1/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 怎么扩容？'  [coreference] 那它扩容呢？
+  [ 2/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 生产环境的备份策略是什么？'  [ellipsis] 那备份呢？
+  [ 3/17] OK  intent=KNOWLEDGE_SEARCH  query='灰度发布每个阶段要观察多久？'  [ellipsis] 每个阶段要观察多久？
+  [ 4/17] OK  intent=KNOWLEDGE_SEARCH  query='P1 故障多久内要响应？'  [entity_switch] 那 P1 呢？
+  [ 5/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 扩容的触发条件是什么？'  [entity_switch] MySQL 的呢？
+  [ 6/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 慢查询的阈值是多少？'  [entity_switch] 那 MySQL 的慢查询呢？
+  [ 7/17] OK  intent=KNOWLEDGE_SEARCH  query='access token 的有效期是多久？'  [entity_switch] access token 呢？
+  [ 8/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 开发环境的持久化配置是否与生产环境相同？'  [constraint_inheritance] 开发环境也这样吗？
+  [ 9/17] OK  intent=KNOWLEDGE_SEARCH  query='飞鸽主值班没确认它推的告警会怎样？'  [coreference] 主值班没确认它推的告警会怎样？
+  [10/17] OK  intent=DOCUMENT_LOOKUP   query="{'document_id': 'mysql_ops'} MySQL 运维规范文档的完整内容是什么？"  [coreference_document] 第二篇的完整内容给我
+  [11/17] OK  intent=MULTI_TOOL        query="{'chunk_id': 'redis_003'} {'document_id': 'redis',"  [coreference_chunk] 它属于哪篇文档？把那篇完整内容给我
+  [12/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_006'} redis_ops_006 讲的什么"  [id_preservation] redis_ops_006 讲的什么
+  [13/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_004'} redis_ops_004 里说的迁移窗"  [id_preservation] redis_ops_004 里说的迁移窗口是几点？
+  [14/17] OK  intent=KNOWLEDGE_SEARCH  query='不在周五的话，哪天可以做常规发布？'  [number_negation] 不在周五的话，哪天可以做常规发布？
+  [15/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 集群单次迁移超过 1000 个 slot 可以吗？'  [number_negation] 单次迁移超过 1000 个 slot 可以吗？
+  [16/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 怎么扩容？'  [no_rewrite_needed] Redis 怎么扩容？
+  [17/17] OK  intent=DIRECT            query='用一句话介绍一下 Python 这门编程语言。'  [topic_switch] 用一句话介绍一下 Python 这门编程语言。
+
+========== Query Understanding / Contextual Rewrite ==========
+metric                         query_understanding
+n                                               17
+intent_accuracy                                1.0
+query_must_contain_rate                        1.0
+id_preservation_rate                           1.0
+first_retrieval_recall@5                       1.0
+qu_contract_violations                           0
+qu_fallbacks                                     0
+
+---------- Latency [query_understanding] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft                      5929.9    5164.5   11990.3   12534.0    17
+query_understanding           3222.2    2509.6    5789.9    6825.0    17
+agent_decision_first          1914.6    1914.6    2560.5    2632.3     2
+tool_selection                3358.3    2768.0    5857.5    6827.7    16
+
+[query_understanding] 第一次检索 Query / standalone_query：
+  OK  '那它扩容呢？'                           → 'Redis 怎么扩容？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那备份呢？'                            → 'MySQL 生产环境的备份策略是什么？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '每个阶段要观察多久？'                       → '灰度发布每个阶段要观察多久？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 P1 呢？'                          → 'P1 故障多久内要响应？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'MySQL 的呢？'                        → 'MySQL 扩容的触发条件是什么？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 MySQL 的慢查询呢？'                   → 'MySQL 慢查询的阈值是多少？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'access token 呢？'                  → 'access token 的有效期是多久？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '开发环境也这样吗？'                        → 'Redis 开发环境的持久化配置是否与生产环境相同？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '主值班没确认它推的告警会怎样？'                  → '飞鸽主值班没确认它推的告警会怎样？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '第二篇的完整内容给我'                       → "{'document_id': 'mysql_ops'} MySQL 运维规范文档的完整内容是什么？"  intent=DOCUMENT_LOOKUP recall@5=None
+  OK  '它属于哪篇文档？把那篇完整内容给我'                → "{'chunk_id': 'redis_003'} {'document_id': 'redis', 'view': 'full'} chunk_id 为 redis_003 的内容属于哪篇文档？请提供该文档的完整内容。"  intent=MULTI_TOOL recall@5=None
+  OK  'redis_ops_006 讲的什么'               → "{'chunk_id': 'redis_ops_006'} redis_ops_006 讲的什么"  intent=CHUNK_LOOKUP recall@5=None
+  OK  'redis_ops_004 里说的迁移窗口是几点？'        → "{'chunk_id': 'redis_ops_004'} redis_ops_004 里说的迁移窗口是几点？"  intent=CHUNK_LOOKUP recall@5=None
+  OK  '不在周五的话，哪天可以做常规发布？'                → '不在周五的话，哪天可以做常规发布？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '单次迁移超过 1000 个 slot 可以吗？'          → 'Redis 集群单次迁移超过 1000 个 slot 可以吗？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'Redis 怎么扩容？'                      → 'Redis 怎么扩容？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '用一句话介绍一下 Python 这门编程语言。'          → '用一句话介绍一下 Python 这门编程语言。'  intent=DIRECT recall@5=None
+
+[Regression] 5/7 Tool Calling Eval
+
+[ToolEval] mode=query_understanding  n=42
+  [ 1/42] OK  intent=DIRECT            tools=[]  ttft=  3199ms  [direct] 用一句话介绍一下 Python 这门编程语言。
+  [ 2/42] OK  intent=DIRECT            tools=[]  ttft=  2857ms  [direct] 你好，你是谁？
+  [ 3/42] OK  intent=DIRECT            tools=[]  ttft=  2002ms  [direct] 1024 除以 8 等于多少？
+  [ 4/42] OK  intent=DIRECT            tools=[]  ttft= 12065ms  [direct] 把这句话翻译成英文：今天天气很好。
+  [ 5/42] OK  intent=DIRECT            tools=[]  ttft=  1841ms  [direct] 写一句鼓励同事的话。
+  [ 6/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  5098ms  [knowledge_search] Redis 怎么扩容？
+  [ 7/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft= 11235ms  [knowledge_search] 周五可以发布吗？
+  [ 8/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3332ms  [knowledge_search] 灰度放量期间错误率超过多少要暂停？
+  [ 9/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3744ms  [knowledge_search] redis 卡了先查啥
+  [10/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3734ms  [knowledge_search] AUTH-4031 是什么错误？
+  [11/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  2728ms  [knowledge_search] 我们的 Agent 一轮对话最多调用几次工具？
+  [12/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3024ms  [knowledge_search] 那它扩容呢？
+  [13/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  3422ms  [confusable] Redis 的 key 有什么命名规范？
+  [14/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  9582ms  [confusable] MySQL 大表加字段用什么工具？
+  [15/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  6590ms  [confusable] Redis 运维文档里，脑裂是怎么处理的？
+  [16/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  2649ms  [confusable] 知识库里有多少篇文档？
+  [17/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  3724ms  [confusable] deploy 文档的大纲是什么？
+  [18/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  4707ms  [no_answer] Kafka ISR 是怎么实现的？
+  [19/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  9967ms  [no_answer] 我们团队的 Kafka 集群代号是什么？
+  [20/42] OK  intent=KNOWLEDGE_SEARCH  tools=['search_knowledge_base']  ttft=  4653ms  [no_answer] MongoDB 的慢查询阈值是多少？
+  [21/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2537ms  [document_lookup] 把 redis 文档完整内容给我
+  [22/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  4015ms  [document_lookup] 给我看 mysql_ops 这篇文档的全文
+  [23/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  5762ms  [document_lookup] 把《API 设计规范》这篇文档完整发我
+  [24/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  6509ms  [chunk_lookup] 看一下 redis_003
+  [25/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  3021ms  [chunk_lookup] redis_ops_006 这个 chunk 讲了什么？
+  [26/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  3247ms  [chunk_lookup] mysql_002 的原文是什么？
+  [27/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  2520ms  [chunk_lookup] 引用一下 deploy_003 的内容
+  [28/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  2663ms  [document_list] 有哪些 MySQL 文档？
+  [29/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft= 15674ms  [document_list] 知识库里都有哪些文档？
+  [30/42] OK  intent=DOCUMENT_LIST     tools=['list_documents']  ttft=  3252ms  [document_list] Redis 相关的文档有哪几篇？
+  [31/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  2671ms  [index_status] 当前知识库有多少个 chunk？
+  [32/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  3711ms  [index_status] 当前一共有多少 chunk？
+  [33/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  4442ms  [index_status] 现在索引用的是哪个 embedding 模型？
+  [34/42] OK  intent=INDEX_STATUS      tools=['get_index_status']  ttft=  2373ms  [index_status] 知识库索引最近一次是什么时候更新的？
+  [35/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document']  ttft=  2114ms  [wrong_document_id] 给我 kafka 文档的完整内容
+  [36/42] OK  intent=DOCUMENT_LOOKUP   tools=['get_document', 'get_document']  ttft=  3894ms  [wrong_document_id] 把 redis_cluster 文档全文发我
+  [37/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft=  7541ms  [wrong_chunk_id] 看一下 redis_009
+  [38/42] OK  intent=CHUNK_LOOKUP      tools=['get_chunk']  ttft= 14224ms  [wrong_chunk_id] mysql_ops_099 讲了什么？
+  [39/42] OK  intent=MULTI_TOOL        tools=['search_knowledge_base', 'get_document']  ttft= 15681ms  [multi_tool] 知识库里讲 Redis 脑裂处理的内容出自哪篇文档？把那篇文档的完整内容也给我。
+  [40/42] OK  intent=MULTI_TOOL        tools=['list_documents', 'search_knowledge_base']  ttft=  6162ms  [multi_tool] 列出所有 MySQL 相关的文档，并告诉我 MySQL 慢查询的阈值是多少。
+  [41/42] OK  intent=MULTI_TOOL        tools=['get_index_status', 'search_knowledge_base']  ttft=  5433ms  [multi_tool] 当前索引用的是哪种 chunk 策略？另外团队对文档切分有什么规范？
+  [42/42] OK  intent=MULTI_TOOL        tools=['get_chunk', 'get_chunk']  ttft=  9421ms  [multi_tool] 分别看一下 redis_003 和 mysql_002 这两个 chunk，对比
+
+========== Tool Calling Metrics ==========
+metric                             query_understanding
+intent_accuracy                                    1.0
+candidate_tool_recall                            0.973
+tool_selection_accuracy                            1.0
+first_tool_accuracy                                1.0
+tool_argument_valid_rate                           1.0
+tool_execution_success_rate                        1.0
+tool_business_success_rate                      0.8333
+unnecessary_tool_call_rate                         0.0
+wrong_tool_rate                                    0.0
+direct_accuracy                                    1.0
+multi_tool_task_success_rate                       1.0
+expected_args_accuracy                             1.0
+answer_contains_rate                               1.0
+no_answer_correct_rate                             1.0
+not_found_handled_rate                             1.0
+source_integrity_rate                              1.0
+total_tool_calls                                    42
+
+---------- by category (intent_ok / selection_ok / n) ----------
+direct                                 5/5/5
+knowledge_search                       7/7/7
+confusable                             5/5/5
+no_answer                              3/3/3
+document_lookup                        3/3/3
+chunk_lookup                           4/4/4
+document_list                          3/3/3
+index_status                           4/4/4
+wrong_document_id                      2/2/2
+wrong_chunk_id                         2/2/2
+multi_tool                             4/4/4
+
+---------- Latency [query_understanding] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft_direct               4393.1    2857.2   10292.2   12065.4     5
+e2e_ttft_rag                  5248.8    3739.0   10491.0   11234.7    10
+e2e_ttft_exact_lookup         4456.9    3249.6    9716.8   15673.9    14
+total_all                     7060.6    5456.7   14990.8   20684.3    42
+query_understanding           3480.8    2357.7    9796.8   15182.2    42
+agent_decision_first          1390.3    1262.5    1996.1    2041.9     5
+tool_selection_latency        3638.5    2619.6    8090.3   15184.5    37
+tool_execution_latency_rag    1376.7     664.2    3628.9    8051.5    16
+tool_execution_latency_exact       6.9       5.5      13.0      13.4    26
+
+---------- Stability [query_understanding] ----------
+requests                        42
+llm_attempts                    115
+llm_logical_calls               113
+attempt_status_counts           {'success': 113, 'timeout': 2}
+timeout_rate                    0.0174
+retry_rate                      0.0177
+structured_calls                49
+structured_parse_failure_rate   0.0
+structured_unrecovered_rate     0.0
+structured_reask_count          0
+rag_requests                    16
+query_rewrite_rate              0.1875
+grader_trigger_rate             0.1875
+tool_calls                      42
+tool_error_rate                 0.0
+duplicate_tool_call_rate        0.0
+no_answer_rate                  0.0714
+llm_error_answers               0
+
+[query_understanding] 未通过（intent 或 tool selection）0 条：
+
+[Regression] 6/7 No-Answer Eval / 7/7 Latency & Stability
+
+==================== Regression Summary (mode=query_understanding) ====================
+  [PASS] retrieval.hybrid_rerank.recall@5         0.9778  (threshold 0.9)
+  [PASS] retrieval.hybrid_rerank.mrr              0.9533  (threshold 0.9)
+  [PASS] incremental.passed                       True  (threshold True)
+  [PASS] query.intent_accuracy                    1.0  (threshold 0.9)
+  [PASS] query.query_must_contain_rate            1.0  (threshold 0.85)
+  [PASS] tool.intent_accuracy                     1.0  (threshold 0.9)
+  [PASS] tool.tool_selection_accuracy             1.0  (threshold 0.9)
+  [PASS] tool.tool_argument_valid_rate            1.0  (threshold 0.95)
+  [PASS] tool.tool_execution_success_rate         1.0  (threshold 0.98)
+  [PASS] tool.multi_tool_task_success_rate        1.0  (threshold 0.75)
+  [PASS] tool.no_answer_correct_rate              1.0  (threshold 1.0)
+  [PASS] tool.source_integrity_rate               1.0  (threshold 1.0)
+  stability: timeout_rate=0.0174 retry_rate=0.0177 parse_failure_rate=0.0 rewrite_rate=0.1875 grader_rate=0.1875 tool_error_rate=0.0 dup_rate=0.0 no_answer_rate=0.0714
+  versions: chat=qwen3.8-flash embedding=qwen3.7-text-embedding-flash reranker=BAAI/bge-reranker-base chunk=C collection=rag_demo_v4_c_0073c1ee
+  REGRESSION PASSED
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/regression_summary.json

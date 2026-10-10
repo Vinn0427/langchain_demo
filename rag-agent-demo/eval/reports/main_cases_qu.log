@@ -1,0 +1,516 @@
+[Startup] alias=rag_demo → rag_demo_v4_c_0073c1ee points=31  qdrant_check=19ms, reranker_load=480ms, jieba_load=171ms  routing_mode=query_understanding
+
+======================================================================
+[User] 用一句话介绍一下 Python 这门编程语言。
+======================================================================
+[LLM] req=1259fbce call=1259fbce-01 phase=query_understanding attempt=1 status=success latency=1548ms timeout=8.0s
+[QU] status=ok intent=DIRECT confidence=1.00 standalone_query='用一句话介绍一下 Python 这门编程语言。' candidate_tools=[]
+[Agent] LLM called (tools=none, reason=intent_direct)
+[Assistant] 知识库中没有足够信息支持回答。[LLM] req=1259fbce call=1259fbce-02 phase=final_answer attempt=1 status=success latency=368ms timeout=10.0s first_token=269ms
+
+[Trace] HumanMessage → AIMessage
+[State] routing_mode=query_understanding intent=DIRECT standalone_query='用一句话介绍一下 Python 这门编程语言。' candidate_tools=[]
+[State] final_answer_kind=llm used_chunk_ids=None
+========== Performance ==========
+query_understanding        1674.3 ms
+agent_decision               skipped
+hybrid_retrieval             skipped
+  query_embedding            skipped
+  dense_retrieval            skipped
+  sparse_retrieval           skipped
+  rrf_fusion                 skipped
+rerank                       skipped
+retrieval_gate               skipped
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message           skipped
+tool_execution               skipped
+
+final_llm                   368.7 ms   = model_ttft + generation
+model_ttft                  268.9 ms
+e2e_ttft                   1945.9 ms
+generation                   99.8 ms
+
+total                      2046.8 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=1259fbce
+
+---------- LLM / Embedding attempts ----------
+1259fbce-01 query_understanding #1 success              1548 ms
+1259fbce-02 final_answer        #1 success               368 ms ttft=269
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] Redis 怎么扩容？
+======================================================================
+[LLM] req=10511abf call=10511abf-01 phase=query_understanding attempt=1 status=success latency=1906ms timeout=8.0s
+[QU] status=ok intent=KNOWLEDGE_SEARCH confidence=0.95 standalone_query='Redis 怎么扩容？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[QU] dispatch tool_call: search_knowledge_base args={'query': 'Redis 怎么扩容？'}（跳过 Agent Decision）
+[Retrieve] query: Redis 怎么扩容？  (from standalone_query)
+[LLM] req=10511abf call=10511abf-02 phase=query_embedding attempt=1 status=success latency=350ms timeout=5.0s
+[Retrieve] dense  top: redis_ops_003(0.729), redis_ops_004(0.719), mysql_ops_003(0.556), mysql_ops_002(0.534), redis_003(0.515)
+[Retrieve] sparse top: redis_ops_004(4.819), redis_ops_003(4.784), mysql_ops_002(3.181), mysql_ops_003(2.811), redis_001(1.935)
+[Retrieve] rrf    top: redis_ops_003(0.033), redis_ops_004(0.033), mysql_ops_003(0.031), mysql_ops_002(0.031), redis_003(0.030)
+[Rerank]   top: redis_ops_004(1.000), redis_ops_003(0.994), redis_ops_001(0.650), redis_001(0.119), redis_ops_005(0.073)
+[Gate] HIGH (top rerank_score=1.000, high>=0.9, low<0.15) → pass 2 documents
+[Tool] search_knowledge_base({"query": "Redis 怎么扩容？"}) → ok 699ms sources=['redis_ops_004', 'redis_ops_003']
+[Agent] LLM called (tools=['search_knowledge_base', 'get_document', 'get_chunk'])
+[Assistant] Redis 扩容主要通过增加分片来实现，具体规范如下：
+
+**1. 触发条件**
+当出现以下情况时，需要发起扩容申请：
+*   任一分片的内存使用率连续 3 天超过 **70%**。
+*   单分片 QPS 峰值超过 **8 万**。
+
+**2. 操作步骤**
+*   **加入节点**：先加入新的一主一从节点。
+*   **迁移数据**：使用 `redis-cli --cluster reshard` 命令将部分 slot（哈希槽）迁移到新节点上。
+
+**3. 注意事项**
+*   **时间窗口**：slot 迁移只能在业务低峰期（凌晨 1:00–5:00）进行。
+*   **迁移量限制**：单次迁移不超过 **1000 个 slot**。
+*   **观察期**：扩容完成后需观察 **24 小时**，确认各分片的内存和 QPS 已经均衡。[LLM] req=10511abf call=10511abf-03 phase=final_answer attempt=1 status=success latency=2759ms timeout=8.0s first_token=382ms
+
+
+Sources:
+- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)
+- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=KNOWLEDGE_SEARCH standalone_query='Redis 怎么扩容？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[State] tool search_knowledge_base args={'query': 'Redis 怎么扩容？'} success=True error=None retrieval_status=FOUND sources=['redis_ops_004', 'redis_ops_003']
+[State] final_answer_kind=llm used_chunk_ids=['redis_ops_004', 'redis_ops_003']
+========== Performance ==========
+query_understanding        1909.6 ms
+agent_decision               skipped
+hybrid_retrieval            366.7 ms   = 下面 4 项的墙钟时间
+  query_embedding           351.4 ms
+  dense_retrieval             9.8 ms
+  sparse_retrieval            5.3 ms
+  rrf_fusion                0.069 ms
+rerank                      331.0 ms
+retrieval_gate              0.007 ms
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message          0.091 ms
+tool_execution               skipped
+
+final_llm                  2759.9 ms   = model_ttft + generation
+model_ttft                  382.3 ms
+e2e_ttft                   2998.5 ms
+generation                 2377.6 ms
+
+total                      5376.9 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=10511abf
+
+---------- LLM / Embedding attempts ----------
+10511abf-01 query_understanding #1 success              1906 ms
+10511abf-02 query_embedding     #1 success               350 ms
+10511abf-03 final_answer        #1 success              2759 ms ttft=382
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] Redis 怎么部署？
+======================================================================
+[LLM] req=80b12a36 call=80b12a36-01 phase=query_understanding attempt=1 status=success latency=1925ms timeout=8.0s
+[QU] status=ok intent=KNOWLEDGE_SEARCH confidence=0.95 standalone_query='Redis 怎么部署？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[QU] dispatch tool_call: search_knowledge_base args={'query': 'Redis 怎么部署？'}（跳过 Agent Decision）
+[Retrieve] query: Redis 怎么部署？  (from standalone_query)
+[LLM] req=80b12a36 call=80b12a36-02 phase=query_embedding attempt=1 status=success latency=297ms timeout=5.0s
+[Retrieve] dense  top: redis_ops_001(0.661), redis_ops_002(0.583), redis_001(0.574), redis_ops_004(0.535), redis_ops_003(0.513)
+[Retrieve] sparse top: redis_ops_001(4.517), redis_ops_002(4.226), mysql_ops_001(3.621), redis_001(1.935), redis_003(1.849)
+[Retrieve] rrf    top: redis_ops_001(0.033), redis_ops_002(0.032), redis_001(0.031), redis_ops_004(0.031), redis_003(0.031)
+[Rerank]   top: redis_ops_002(0.998), redis_ops_001(0.996), redis_ops_004(0.844), redis_ops_006(0.412), redis_001(0.164)
+[Gate] HIGH (top rerank_score=0.998, high>=0.9, low<0.15) → pass 2 documents
+[Tool] search_knowledge_base({"query": "Redis 怎么部署？"}) → ok 636ms sources=['redis_ops_002', 'redis_ops_001']
+[Agent] LLM called (tools=['search_knowledge_base', 'get_document', 'get_chunk'])
+[Assistant] Redis 的部署方式根据环境不同有所区别：
+
+**1. 本地开发环境**
+推荐使用 Docker 启动单节点实例，且不开启持久化。
+*   **命令**：`docker run -d -p 6379:6379 redis:7.2`
+
+**2. 生产环境**
+统一部署为 Cluster 模式，具体规范如下：
+*   **架构**：3 主 3 从，共 6 个节点。同一分片的主从节点必须分布在不同可用区。
+*   **版本**：统一使用 Redis 7.2。
+*   **持久化**：采用 AOF 模式（`appendfsync everysec`），并在每天凌晨 3:00 额外生成一次 RDB 快照用于备份。
+*   **上线要求**：新集群上线前必须完成压测，单分片压测 QPS 不低于 5 万。[LLM] req=80b12a36 call=80b12a36-03 phase=final_answer attempt=1 status=success latency=2594ms timeout=8.0s first_token=549ms
+
+
+Sources:
+- redis_ops_002 (data/redis_ops.md | Redis 运维规范 > 部署 > 生产集群部署)
+- redis_ops_001 (data/redis_ops.md | Redis 运维规范 > 部署 > 开发环境)
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=KNOWLEDGE_SEARCH standalone_query='Redis 怎么部署？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[State] tool search_knowledge_base args={'query': 'Redis 怎么部署？'} success=True error=None retrieval_status=FOUND sources=['redis_ops_002', 'redis_ops_001']
+[State] final_answer_kind=llm used_chunk_ids=['redis_ops_002', 'redis_ops_001']
+========== Performance ==========
+query_understanding        1927.8 ms
+agent_decision               skipped
+hybrid_retrieval            310.9 ms   = 下面 4 项的墙钟时间
+  query_embedding           298.0 ms
+  dense_retrieval             7.7 ms
+  sparse_retrieval            4.9 ms
+  rrf_fusion                0.077 ms
+rerank                      323.5 ms
+retrieval_gate              0.003 ms
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message          0.112 ms
+tool_execution               skipped
+
+final_llm                  2595.1 ms   = model_ttft + generation
+model_ttft                  549.3 ms
+e2e_ttft                   3157.5 ms
+generation                 2045.9 ms
+
+total                      5203.6 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=80b12a36
+
+---------- LLM / Embedding attempts ----------
+80b12a36-01 query_understanding #1 success              1925 ms
+80b12a36-02 query_embedding     #1 success               297 ms
+80b12a36-03 final_answer        #1 success              2594 ms ttft=549
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] 那它扩容呢？   (history: 1 turns)
+======================================================================
+[LLM] req=35a374a7 call=35a374a7-01 phase=query_understanding attempt=1 status=success latency=1637ms timeout=8.0s
+[QU] status=ok intent=KNOWLEDGE_SEARCH confidence=0.95 standalone_query='Redis 怎么扩容？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[QU] dispatch tool_call: search_knowledge_base args={'query': 'Redis 怎么扩容？'}（跳过 Agent Decision）
+[Retrieve] query: Redis 怎么扩容？  (from standalone_query)
+[LLM] req=35a374a7 call=35a374a7-02 phase=query_embedding attempt=1 status=success latency=280ms timeout=5.0s
+[Retrieve] dense  top: redis_ops_003(0.729), redis_ops_004(0.719), mysql_ops_003(0.556), mysql_ops_002(0.534), redis_003(0.515)
+[Retrieve] sparse top: redis_ops_004(4.819), redis_ops_003(4.784), mysql_ops_002(3.181), mysql_ops_003(2.811), redis_001(1.935)
+[Retrieve] rrf    top: redis_ops_003(0.033), redis_ops_004(0.033), mysql_ops_003(0.031), mysql_ops_002(0.031), redis_003(0.030)
+[Rerank]   top: redis_ops_004(1.000), redis_ops_003(0.994), redis_ops_001(0.650), redis_001(0.119), redis_ops_005(0.073)
+[Gate] HIGH (top rerank_score=1.000, high>=0.9, low<0.15) → pass 2 documents
+[Tool] search_knowledge_base({"query": "Redis 怎么扩容？"}) → ok 616ms sources=['redis_ops_004', 'redis_ops_003']
+[Agent] LLM called (tools=['search_knowledge_base', 'get_document', 'get_chunk'])
+[Assistant] Redis 的扩容主要通过增加分片（Shard）来完成，具体规范如下：
+
+**1. 触发条件**
+当满足以下任一条件时，需要发起扩容申请：
+*   任一分片的内存使用率连续 3 天超过 70%。
+*   单分片 QPS 峰值超过 8 万。
+
+**2. 操作步骤**
+*   **加入节点**：先加入新的一主一从节点。
+*   **迁移 Slot**：使用 `redis-cli --cluster reshard` 命令将部分 slot 迁移到新节点。
+
+**3. 注意事项**
+*   **时间窗口**：slot 迁移只能在业务低峰期（凌晨 1:00–5:00）进行。
+*   **迁移量限制**：单次迁移不超过 1000 个 slot。
+*   **观察期**：扩容完成后需要观察 24 小时，确认各分片的内存和 QPS 已经均衡。
+
+Sources:
+- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)
+- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)[LLM] req=35a374a7 call=35a374a7-03 phase=final_answer attempt=1 status=success latency=3323ms timeout=8.0s first_token=623ms
+
+
+Sources:
+- redis_ops_004 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容步骤)
+- redis_ops_003 (data/redis_ops.md | Redis 运维规范 > 扩容 > 扩容触发条件)
+[Trace] HumanMessage → AIMessage → HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=KNOWLEDGE_SEARCH standalone_query='Redis 怎么扩容？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk']
+[State] tool search_knowledge_base args={'query': 'Redis 怎么扩容？'} success=True error=None retrieval_status=FOUND sources=['redis_ops_004', 'redis_ops_003']
+[State] final_answer_kind=llm used_chunk_ids=['redis_ops_004', 'redis_ops_003']
+========== Performance ==========
+query_understanding        1640.1 ms
+agent_decision               skipped
+hybrid_retrieval            293.4 ms   = 下面 4 项的墙钟时间
+  query_embedding           280.9 ms
+  dense_retrieval             7.7 ms
+  sparse_retrieval            4.6 ms
+  rrf_fusion                0.071 ms
+rerank                      321.4 ms
+retrieval_gate              0.003 ms
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message          0.102 ms
+tool_execution               skipped
+
+final_llm                  3324.5 ms   = model_ttft + generation
+model_ttft                  623.2 ms
+e2e_ttft                   2887.1 ms
+generation                 2701.3 ms
+
+total                      5589.4 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=35a374a7
+
+---------- LLM / Embedding attempts ----------
+35a374a7-01 query_understanding #1 success              1637 ms
+35a374a7-02 query_embedding     #1 success               280 ms
+35a374a7-03 final_answer        #1 success              3323 ms ttft=623
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] 把 redis 文档完整内容给我
+======================================================================
+[LLM] req=c1c38dad call=c1c38dad-01 phase=query_understanding attempt=1 status=success latency=1312ms timeout=8.0s
+[QU] status=ok intent=DOCUMENT_LOOKUP confidence=1.00 standalone_query='把 redis 文档完整内容给我' candidate_tools=['get_document', 'list_documents']
+[QU] dispatch tool_call: get_document args={'document_id': 'redis'}（跳过 Agent Decision）
+[Tool] get_document({"document_id": "redis"}) → ok 6ms sources=['redis']
+[Agent] LLM called (tools=['get_document', 'list_documents'])
+[Assistant] # Redis 使用手册
+
+## Redis 的用途
+Redis 是一个基于内存的 Key-Value 数据库，读写速度极快。常见用途包括：缓存、分布式锁、计数器、排行榜、简单消息队列（List / Stream）。
+在我们团队，Redis 集群的内部代号是「青鸟」（Bluebird），主要用于缓存用户会话（Session）和接口限流。
+团队规范要求：所有 key 必须以 `demo:` 作为前缀，并且必须设置过期时间。
+
+## 接口限流方案
+团队的接口限流统一基于 Redis 的 Sorted Set（ZSET）实现滑动窗口算法：每次请求以时间戳作为 score 写入 ZSET，并删除窗口之外的旧记录。
+默认限额为每个用户每分钟 120 次请求，超过限额时网关返回 HTTP 429，错误码为 `RATE_LIMITED`。
+限流相关的 key 统一使用 `demo:ratelimit:{user_id}` 格式。
+
+## Redis 故障排查
+线上 Redis 变慢时，优先排查三类问题：大 key、热 key、慢命令。
+团队禁止写入超过 10MB 的单个 value；禁止在生产环境执行 `KEYS *`，遍历 key 必须使用 `SCAN`。
+慢命令通过 `SLOWLOG GET` 查看，执行时间超过 10 毫秒的命令会被记录并触发告警。[LLM] req=c1c38dad call=c1c38dad-02 phase=final_answer attempt=1 status=success latency=2504ms timeout=8.0s first_token=339ms
+
+
+Sources:
+- redis (Redis 使用手册 | data/redis.md)
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=DOCUMENT_LOOKUP standalone_query='把 redis 文档完整内容给我' candidate_tools=['get_document', 'list_documents']
+[State] tool get_document args={'document_id': 'redis'} success=True error=None retrieval_status=None sources=['redis']
+[State] final_answer_kind=llm used_chunk_ids=['redis_001', 'redis_002', 'redis_003']
+========== Performance ==========
+query_understanding        1314.9 ms
+agent_decision               skipped
+hybrid_retrieval             skipped
+  query_embedding            skipped
+  dense_retrieval            skipped
+  sparse_retrieval           skipped
+  rrf_fusion                 skipped
+rerank                       skipped
+retrieval_gate               skipped
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message           skipped
+tool_execution                5.5 ms
+
+final_llm                  2505.4 ms   = model_ttft + generation
+model_ttft                  339.1 ms
+e2e_ttft                   1669.7 ms
+generation                 2166.3 ms
+
+total                      3836.7 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=c1c38dad
+
+---------- LLM / Embedding attempts ----------
+c1c38dad-01 query_understanding #1 success              1312 ms
+c1c38dad-02 final_answer        #1 success              2504 ms ttft=339
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] 看一下 redis_003
+======================================================================
+[LLM] req=c03cbb6d call=c03cbb6d-01 phase=query_understanding attempt=1 status=success latency=1881ms timeout=8.0s
+[QU] status=ok intent=CHUNK_LOOKUP confidence=1.00 standalone_query='看一下 redis_003' candidate_tools=['get_chunk', 'get_document']
+[QU] dispatch tool_call: get_chunk args={'chunk_id': 'redis_003'}（跳过 Agent Decision）
+[Tool] get_chunk({"chunk_id": "redis_003"}) → ok 6ms sources=['redis_003']
+[Agent] LLM called (tools=['get_chunk', 'get_document'])
+[Assistant] 这是 `redis_003` 的内容，来自《Redis 使用手册》的“Redis 故障排查”章节：
+
+> 线上 Redis 变慢时，优先排查三类问题：大 key、热 key、慢命令。
+> 
+> - 团队禁止写入超过 10MB 的单个 value；
+> - 禁止在生产环境执行 `KEYS *`，遍历 key 必须使用 `SCAN`。
+> - 慢命令通过 `SLOWLOG GET` 查看，执行时间超过 10 毫秒的命令会被记录并触发告警。[LLM] req=c03cbb6d call=c03cbb6d-02 phase=final_answer attempt=1 status=success latency=1546ms timeout=8.0s first_token=350ms
+
+
+Sources:
+- redis_003 (Redis 使用手册 > Redis 故障排查)
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=CHUNK_LOOKUP standalone_query='看一下 redis_003' candidate_tools=['get_chunk', 'get_document']
+[State] tool get_chunk args={'chunk_id': 'redis_003'} success=True error=None retrieval_status=None sources=['redis_003']
+[State] final_answer_kind=llm used_chunk_ids=['redis_003']
+========== Performance ==========
+query_understanding        1884.4 ms
+agent_decision               skipped
+hybrid_retrieval             skipped
+  query_embedding            skipped
+  dense_retrieval            skipped
+  sparse_retrieval           skipped
+  rrf_fusion                 skipped
+rerank                       skipped
+retrieval_gate               skipped
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message           skipped
+tool_execution                6.1 ms
+
+final_llm                  1546.7 ms   = model_ttft + generation
+model_ttft                  349.6 ms
+e2e_ttft                   2249.5 ms
+generation                 1197.1 ms
+
+total                      3447.3 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=c03cbb6d
+
+---------- LLM / Embedding attempts ----------
+c03cbb6d-01 query_understanding #1 success              1881 ms
+c03cbb6d-02 final_answer        #1 success              1546 ms ttft=350
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] 有哪些 MySQL 文档？
+======================================================================
+[LLM] req=b61e1b30 call=b61e1b30-01 phase=query_understanding attempt=1 status=success latency=1563ms timeout=8.0s
+[QU] status=ok intent=DOCUMENT_LIST confidence=1.00 standalone_query='有哪些 MySQL 文档？' candidate_tools=['list_documents']
+[QU] dispatch tool_call: list_documents args={'topic': 'MySQL'}（跳过 Agent Decision）
+[Tool] list_documents({"topic": "MySQL"}) → ok 6ms sources=[]
+[Agent] LLM called (tools=['list_documents'])
+[Assistant] 知识库中包含以下 MySQL 相关文档：
+
+1. **MySQL 使用规范** (document_id: `mysql`)
+   - 来源：`data/mysql.md`
+   - 包含章节：建表规范、慢查询与索引、数据库变更流程
+
+2. **MySQL 运维规范** (document_id: `mysql_ops`)
+   - 来源：`data/mysql_ops.md`
+   - 包含章节：主从延迟、备份与恢复、扩容、部署[LLM] req=b61e1b30 call=b61e1b30-02 phase=final_answer attempt=1 status=success latency=1259ms timeout=8.0s first_token=315ms
+
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=DOCUMENT_LIST standalone_query='有哪些 MySQL 文档？' candidate_tools=['list_documents']
+[State] tool list_documents args={'topic': 'MySQL'} success=True error=None retrieval_status=None sources=[]
+[State] final_answer_kind=llm used_chunk_ids=[]
+========== Performance ==========
+query_understanding        1565.8 ms
+agent_decision               skipped
+hybrid_retrieval             skipped
+  query_embedding            skipped
+  dense_retrieval            skipped
+  sparse_retrieval           skipped
+  rrf_fusion                 skipped
+rerank                       skipped
+retrieval_gate               skipped
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message           skipped
+tool_execution                5.8 ms
+
+final_llm                  1259.4 ms   = model_ttft + generation
+model_ttft                  315.5 ms
+e2e_ttft                   1894.0 ms
+generation                  944.0 ms
+
+total                      2839.0 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=b61e1b30
+
+---------- LLM / Embedding attempts ----------
+b61e1b30-01 query_understanding #1 success              1563 ms
+b61e1b30-02 final_answer        #1 success              1259 ms ttft=315
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] 当前一共有多少 chunk？
+======================================================================
+[LLM] req=5707abbf call=5707abbf-01 phase=query_understanding attempt=1 status=success latency=1726ms timeout=8.0s
+[QU] status=ok intent=INDEX_STATUS confidence=1.00 standalone_query='当前一共有多少 chunk？' candidate_tools=['get_index_status']
+[QU] dispatch tool_call: get_index_status args={}（跳过 Agent Decision）
+[Tool] get_index_status({}) → ok 15ms sources=[]
+[Agent] LLM called (tools=['get_index_status'])
+[Assistant] 当前知识库中一共有 31 个 chunk。[LLM] req=5707abbf call=5707abbf-02 phase=final_answer attempt=1 status=success latency=576ms timeout=8.0s first_token=361ms
+
+[Trace] HumanMessage → AIMessage → ToolMessage → AIMessage
+[State] routing_mode=query_understanding intent=INDEX_STATUS standalone_query='当前一共有多少 chunk？' candidate_tools=['get_index_status']
+[State] tool get_index_status args={} success=True error=None retrieval_status=None sources=[]
+[State] final_answer_kind=llm used_chunk_ids=[]
+========== Performance ==========
+query_understanding        1728.4 ms
+agent_decision               skipped
+hybrid_retrieval             skipped
+  query_embedding            skipped
+  dense_retrieval            skipped
+  sparse_retrieval           skipped
+  rrf_fusion                 skipped
+rerank                       skipped
+retrieval_gate               skipped
+llm_grader                   skipped
+query_rewrite                skipped
+build_tool_message           skipped
+tool_execution               15.0 ms
+
+final_llm                   577.5 ms   = model_ttft + generation
+model_ttft                  360.6 ms
+e2e_ttft                   2109.8 ms
+generation                  216.9 ms
+
+total                      2327.5 ms   墙钟时间，不等于各阶段相加
+deadline                    30000 ms   request_id=5707abbf
+
+---------- LLM / Embedding attempts ----------
+5707abbf-01 query_understanding #1 success              1726 ms
+5707abbf-02 final_answer        #1 success               576 ms ttft=361
+[event] structured_parse {'phase': 'query_understanding', 'schema': 'QueryUnderstandingResult', 'status': 'ok', 'recovered_by': 'strict', 'reask': False, 'llm_requests': 1, 'error': None, 'raw': None}
+=================================
+
+======================================================================
+[User] Kafka ISR 是怎么实现的？
+======================================================================
+[LLM] req=8d5e375a call=8d5e375a-01 phase=query_understanding attempt=1 status=success latency=1444ms timeout=8.0s
+[QU] status=ok intent=KNOWLEDGE_SEARCH confidence=0.95 standalone_query='Kafka ISR 是怎么实现的？' candidate_tools=['search_knowledge_base', 'get_document', 'get_chunk'] violations=["unknown_tools:['search_knowledge_base(query)']"]
+[QU] dispatch tool_call: search_knowledge_base args={'query': 'Kafka ISR 是怎么实现的？'}（跳过 Agent Decision）
+[Retrieve] query: Kafka ISR 是怎么实现的？  (from standalone_query)
+[LLM] req=8d5e375a call=8d5e375a-02 phase=query_embedding attempt=1 status=success latency=309ms timeout=5.0s
+[Retrieve] dense  top: redis_002(0.371), redis_ops_005(0.368), redis_ops_004(0.347), redis_ops_003(0.346), redis_ops_002(0.337)
+[Retrieve] sparse top: mysql_ops_001(2.759), redis_002(2.144)
+[Retrieve] rrf    top: redis_002(0.033), mysql_ops_001(0.031), redis_ops_005(0.016), redis_ops_004(0.016), redis_ops_003(0.016)
+[Rerank]   top: redis_ops_005(0.004), redis_ops_006(0.001), redis_ops_004(0.001), redis_ops_002(0.001), redis_002(0.000)
+[Gate] LOW (top rerank_score=0.004, high>=0.9, low<0.15)
+[LLM] req=8d5e375a call=8d5e375a-03 phase=query_rewrite attempt=1 status=success latency=1357ms timeout=5.0s
+[Rewrite] original query: Kafka ISR 是怎么实现的？
+[Rewrite] rewritten query: Kafka ISR In-Sync Replicas 同步机制 实现原理 Leader Follower 副本同步  (llm_requests=1, parse=ok)
+[Retry] 1 / 1
+[Retrieve] query: Kafka ISR In-Sync Replicas 同步机制 实现原理 Leader Follower 副本同步  (rewritten retrieval query)
+[LLM] req=8d5e375a call=8d5e375a-04 phase=query_embedding attempt=1 status=success latency=108ms timeout=5.0s
+[Retrieve] dense  top: redis_ops_005(0.426), redis_ops_006(0.418), redis_ops_002(0.404), mysql_ops_006(0.346), mysql_ops_001(0.339)
+[Retrieve] sparse top: redis_ops_006(3.907), agent_002(2.885), mysql_ops_001(2.759), redis_002(2.144)
+[Retrieve] rrf    top: redis_ops_006(0.033), mysql_ops_001(0.031), redis_ops_005(0.016), agent_002(0.016), redis_ops_002(0.016)
+[Rerank]   top: redis_ops_006(0.003), redis_ops_005(0.002), agent_002(0.001), redis_ops_004(0.001), redis_ops_003(0.000)
+[Gate] LOW (top rerank_score=0.003, high>=0.9, low<0.15)
+[Retry] max retry reached (1 / 1), stop rewriting
+[Tool] search_knowledge_base({"query": "Kafka ISR 是怎么实现的？"}) → NOT_FOUND 2589ms sources=[]
+[Assistant] 知识库中没有足够信息支持回答。Traceback (most recent call last):
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/main.py", line 134, in <module>
+    main()
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/main.py", line 129, in main
+    state = run(question, history, args.mode)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/main.py", line 89, in run
+    result, metrics = ask(question, history, routing_mode)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/main.py", line 54, in ask
+    for mode, payload in graph.stream(inputs, stream_mode=["custom", "values"],
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/pregel/main.py", line 2674, in stream
+    for _ in runner.tick(
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/pregel/_runner.py", line 253, in tick
+    _panic_or_proceed(
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/pregel/_runner.py", line 511, in _panic_or_proceed
+    raise exc
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/pregel/_executor.py", line 81, in done
+    task.result()
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py", line 438, in result
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/_base.py", line 390, in __get_result
+    raise self._exception
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/concurrent/futures/thread.py", line 52, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/pregel/_retry.py", line 42, in run_with_retry
+    return task.proc.invoke(task.input, config)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/_internal/_runnable.py", line 657, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/.venv/lib/python3.9/site-packages/langgraph/_internal/_runnable.py", line 401, in invoke
+    ret = self.func(*args, **kwargs)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/agent/nodes.py", line 215, in agent_node
+    return _emit_fixed_answer(NO_ANSWER_MESSAGE if fixed == "no_answer" else RETRIEVAL_FAILED_MESSAGE, fixed)
+  File "/Users/ewan/Downloads/demo/rag-agent-demo/agent/nodes.py", line 203, in _emit_fixed_answer
+    record_event("deterministic_answer", kind=kind)
+TypeError: record_event() got multiple values for argument 'kind'

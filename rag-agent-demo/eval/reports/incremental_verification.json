@@ -1,0 +1,317 @@
+{
+  "strategy": "C",
+  "fingerprint": "0073c1eea2d8defb",
+  "steps": {
+    "1_full": {
+      "collection": "rag_verify_incr",
+      "mode": "full",
+      "documents_scanned": 9,
+      "added": [
+        "agent",
+        "api",
+        "deploy",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis",
+        "redis_ops"
+      ],
+      "modified": [],
+      "unchanged": [],
+      "deleted": [],
+      "chunks_chunked": 31,
+      "chunks_embedded": 31,
+      "chunks_vector_reused": 0,
+      "embedding_requests": 9,
+      "points_upserted": 31,
+      "points_deleted": 0,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 47.871,
+      "bm25_avgdl_drift": 0.0,
+      "points_in_collection": 31,
+      "timings": {
+        "load_and_chunk": 0.19112645900000003,
+        "dense_embedding": 1.4497355840000004,
+        "bm25_encoding": 0.024170791999999608,
+        "qdrant_write": 0.12960637299999966,
+        "total": 3.0127866250000004
+      }
+    },
+    "2_unchanged": {
+      "collection": "rag_verify_incr",
+      "mode": "incremental",
+      "documents_scanned": 9,
+      "added": [],
+      "modified": [],
+      "unchanged": [
+        "agent",
+        "api",
+        "deploy",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis",
+        "redis_ops"
+      ],
+      "deleted": [],
+      "chunks_chunked": 0,
+      "chunks_embedded": 0,
+      "chunks_vector_reused": 0,
+      "embedding_requests": 0,
+      "points_upserted": 0,
+      "points_deleted": 0,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 47.871,
+      "bm25_avgdl_drift": 0.0,
+      "points_in_collection": 31,
+      "timings": {
+        "total": 0.004347457999999804
+      }
+    },
+    "3_modified": {
+      "collection": "rag_verify_incr",
+      "mode": "incremental",
+      "documents_scanned": 9,
+      "added": [],
+      "modified": [
+        "redis_ops"
+      ],
+      "unchanged": [
+        "agent",
+        "api",
+        "deploy",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis"
+      ],
+      "deleted": [],
+      "chunks_chunked": 7,
+      "chunks_embedded": 2,
+      "chunks_vector_reused": 5,
+      "embedding_requests": 1,
+      "points_upserted": 7,
+      "points_deleted": 0,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 47.031,
+      "bm25_avgdl_drift": 0.0175,
+      "points_in_collection": 32,
+      "timings": {
+        "load_and_chunk": 0.00015504100000018894,
+        "dense_embedding": 0.11953129200000001,
+        "bm25_encoding": 0.0037785409999999686,
+        "qdrant_write": 0.014536957999999878,
+        "total": 0.3548431249999999
+      }
+    },
+    "4_deleted": {
+      "collection": "rag_verify_incr",
+      "mode": "incremental",
+      "documents_scanned": 8,
+      "added": [],
+      "modified": [],
+      "unchanged": [
+        "agent",
+        "deploy",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis",
+        "redis_ops"
+      ],
+      "deleted": [
+        "api"
+      ],
+      "chunks_chunked": 0,
+      "chunks_embedded": 0,
+      "chunks_vector_reused": 0,
+      "embedding_requests": 0,
+      "points_upserted": 0,
+      "points_deleted": 2,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 46.633,
+      "bm25_avgdl_drift": 0.0259,
+      "points_in_collection": 30,
+      "timings": {
+        "total": 0.42271241599999954
+      }
+    },
+    "5_added": {
+      "collection": "rag_verify_incr",
+      "mode": "incremental",
+      "documents_scanned": 9,
+      "added": [
+        "faq"
+      ],
+      "modified": [],
+      "unchanged": [
+        "agent",
+        "deploy",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis",
+        "redis_ops"
+      ],
+      "deleted": [],
+      "chunks_chunked": 1,
+      "chunks_embedded": 1,
+      "chunks_vector_reused": 0,
+      "embedding_requests": 1,
+      "points_upserted": 1,
+      "points_deleted": 0,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 45.871,
+      "bm25_avgdl_drift": 0.0418,
+      "points_in_collection": 31,
+      "timings": {
+        "load_and_chunk": 0.00014216699999991533,
+        "dense_embedding": 0.10344808299999997,
+        "bm25_encoding": 0.0004909999999993531,
+        "qdrant_write": 0.005634208000000029,
+        "total": 0.3288964589999992
+      }
+    },
+    "7_fingerprint_changed": {
+      "collection": "rag_verify_incr",
+      "mode": "incremental",
+      "documents_scanned": 9,
+      "added": [],
+      "modified": [
+        "agent",
+        "deploy",
+        "faq",
+        "mysql",
+        "mysql_ops",
+        "oncall",
+        "rag",
+        "redis",
+        "redis_ops"
+      ],
+      "unchanged": [],
+      "deleted": [],
+      "chunks_chunked": 31,
+      "chunks_embedded": 0,
+      "chunks_vector_reused": 31,
+      "embedding_requests": 0,
+      "points_upserted": 31,
+      "points_deleted": 0,
+      "bm25_avgdl_frozen": 47.871,
+      "bm25_avgdl_actual": 45.871,
+      "bm25_avgdl_drift": 0.0418,
+      "points_in_collection": 31,
+      "timings": {
+        "load_and_chunk": 0.0006869990000009096,
+        "dense_embedding": 3.2910000022923214e-06,
+        "bm25_encoding": 0.00850804300000263,
+        "qdrant_write": 0.034566500999998695,
+        "total": 0.2796281669999985
+      }
+    }
+  },
+  "score_diff": [],
+  "control_default_optimizer_score_diff_queries": 63,
+  "checks": [
+    {
+      "check": "全量构建 embedding chunk 数 = chunk 总数",
+      "ok": true,
+      "detail": "embedded=31 points=31"
+    },
+    {
+      "check": "无修改：0 chunking / 0 embedding / 0 写入",
+      "ok": true,
+      "detail": "chunked=0 embedded=0 embedding_requests=0 upserted=0 deleted=0 skipped=9"
+    },
+    {
+      "check": "只处理被修改的文件",
+      "ok": true,
+      "detail": "modified=['redis_ops'] unchanged=8"
+    },
+    {
+      "check": "只重新 chunk 该文件",
+      "ok": true,
+      "detail": "chunked=7 (redis_ops 共 7)"
+    },
+    {
+      "check": "只 embedding 内容变化的 chunk",
+      "ok": true,
+      "detail": "embedded=2 reused=5"
+    },
+    {
+      "check": "Qdrant 中是新内容",
+      "ok": true,
+      "detail": "points(redis_ops)=7"
+    },
+    {
+      "check": "point 总数变化 = 新增小节数",
+      "ok": true,
+      "detail": "31 → 32"
+    },
+    {
+      "check": "复用的 dense 向量与修改前逐位相同",
+      "ok": true,
+      "detail": "5 reused vectors identical"
+    },
+    {
+      "check": "Qdrant 中 api 的 point 全部删除",
+      "ok": true,
+      "detail": "api points 2 → 0"
+    },
+    {
+      "check": "manifest 同步删除",
+      "ok": true,
+      "detail": "api row removed"
+    },
+    {
+      "check": "其他文件不处理",
+      "ok": true,
+      "detail": "chunked=0"
+    },
+    {
+      "check": "新增文件：chunk → embedding → upsert → manifest",
+      "ok": true,
+      "detail": "added=['faq'] embedded=1"
+    },
+    {
+      "check": "point 集合一致",
+      "ok": true,
+      "detail": "incr=31 full=31"
+    },
+    {
+      "check": "payload 逐 point 一致",
+      "ok": true,
+      "detail": "diff=[]"
+    },
+    {
+      "check": "BM25 sparse vector 逐 point 一致",
+      "ok": true,
+      "detail": "diff=[]"
+    },
+    {
+      "check": "dense 向量与全量重建一致（Provider 噪声范围内，cos>0.995）",
+      "ok": true,
+      "detail": "min cosine=0.997346"
+    },
+    {
+      "check": "Qdrant BM25 检索分数逐 query 一致（IDF 无残留旧版本）",
+      "ok": true,
+      "detail": "65/65 queries identical"
+    },
+    {
+      "check": "fingerprint 变化 → 目标 collection 名变化（build() 会走 Blue-Green）",
+      "ok": true,
+      "detail": "0073c1eea2d8defb → 20e46ae5e67d7ddb"
+    },
+    {
+      "check": "file_hash 不变但 fingerprint 变化：全部文件重新处理",
+      "ok": true,
+      "detail": "modified=9 unchanged=0"
+    }
+  ],
+  "passed": true
+}

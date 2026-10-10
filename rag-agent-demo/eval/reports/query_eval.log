@@ -1,0 +1,101 @@
+
+[QueryEval] mode=v3_agent n=17
+  [ 1/17] ERR intent=DIRECT            query=''  [coreference] 那它扩容呢？
+  [ 2/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 生产环境备份策略和流程'  [ellipsis] 那备份呢？
+  [ 3/17] OK  intent=KNOWLEDGE_SEARCH  query='灰度发布每个阶段观察多久 时间要求'  [ellipsis] 每个阶段要观察多久？
+  [ 4/17] OK  intent=KNOWLEDGE_SEARCH  query='P1 故障响应时间要求'  [entity_switch] 那 P1 呢？
+  [ 5/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 扩容的触发条件'  [entity_switch] MySQL 的呢？
+  [ 6/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 慢查询阈值 slow query log threshold'  [entity_switch] 那 MySQL 的慢查询呢？
+  [ 7/17] OK  intent=KNOWLEDGE_SEARCH  query='access token 有效期'  [entity_switch] access token 呢？
+  [ 8/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 开发环境持久化配置 AOF RDB'  [constraint_inheritance] 开发环境也这样吗？
+  [ 9/17] OK  intent=KNOWLEDGE_SEARCH  query='飞鸽 主值班 未确认告警 后果'  [coreference] 主值班没确认它推的告警会怎样？
+  [10/17] OK  intent=DOCUMENT_LOOKUP   query="{'document_id': 'mysql_ops', 'view': 'full'} "  [coreference_document] 第二篇的完整内容给我
+  [11/17] OK  intent=MULTI_TOOL        query="{'chunk_id': 'redis_003'} {'document_id': 'redis',"  [coreference_chunk] 它属于哪篇文档？把那篇完整内容给我
+  [12/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_006'} "  [id_preservation] redis_ops_006 讲的什么
+  [13/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_004'} "  [id_preservation] redis_ops_004 里说的迁移窗口是几点？
+  [14/17] ERR intent=KNOWLEDGE_SEARCH  query='常规发布 时间 周五'  [number_negation] 不在周五的话，哪天可以做常规发布？
+  [15/17] OK  intent=KNOWLEDGE_SEARCH  query='单次迁移超过 1000 个 slot 限制'  [number_negation] 单次迁移超过 1000 个 slot 可以吗？
+  [16/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 扩容方法'  [no_rewrite_needed] Redis 怎么扩容？
+  [17/17] OK  intent=DIRECT            query=''  [topic_switch] 用一句话介绍一下 Python 这门编程语言。
+
+[QueryEval] mode=query_understanding n=17
+  [ 1/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 怎么扩容？'  [coreference] 那它扩容呢？
+  [ 2/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 生产环境怎么备份？'  [ellipsis] 那备份呢？
+  [ 3/17] OK  intent=KNOWLEDGE_SEARCH  query='灰度发布的每个阶段要观察多久？'  [ellipsis] 每个阶段要观察多久？
+  [ 4/17] OK  intent=KNOWLEDGE_SEARCH  query='P1 故障多久内要响应？'  [entity_switch] 那 P1 呢？
+  [ 5/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 扩容的触发条件是什么？'  [entity_switch] MySQL 的呢？
+  [ 6/17] OK  intent=KNOWLEDGE_SEARCH  query='MySQL 慢查询的阈值是多少？'  [entity_switch] 那 MySQL 的慢查询呢？
+  [ 7/17] OK  intent=KNOWLEDGE_SEARCH  query='access token 的有效期是多久？'  [entity_switch] access token 呢？
+  [ 8/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 开发环境的持久化怎么配置？'  [constraint_inheritance] 开发环境也这样吗？
+  [ 9/17] OK  intent=KNOWLEDGE_SEARCH  query='主值班没确认飞鸽推的告警会怎样？'  [coreference] 主值班没确认它推的告警会怎样？
+  [10/17] OK  intent=DOCUMENT_LOOKUP   query="{'document_id': 'mysql_ops'} mysql_ops 的完整内容给我"  [coreference_document] 第二篇的完整内容给我
+  [11/17] OK  intent=MULTI_TOOL        query="{'chunk_id': 'redis_003'} {'document_id': 'redis',"  [coreference_chunk] 它属于哪篇文档？把那篇完整内容给我
+  [12/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_006'} redis_ops_006 讲的什么"  [id_preservation] redis_ops_006 讲的什么
+  [13/17] OK  intent=CHUNK_LOOKUP      query="{'chunk_id': 'redis_ops_004'} redis_ops_004 里说的迁移窗"  [id_preservation] redis_ops_004 里说的迁移窗口是几点？
+  [14/17] OK  intent=KNOWLEDGE_SEARCH  query='不在周五的话，哪天可以做常规发布？'  [number_negation] 不在周五的话，哪天可以做常规发布？
+  [15/17] OK  intent=KNOWLEDGE_SEARCH  query='单次迁移超过 1000 个 slot 可以吗？'  [number_negation] 单次迁移超过 1000 个 slot 可以吗？
+  [16/17] OK  intent=KNOWLEDGE_SEARCH  query='Redis 怎么扩容？'  [no_rewrite_needed] Redis 怎么扩容？
+  [17/17] OK  intent=DIRECT            query='用一句话介绍一下 Python 这门编程语言。'  [topic_switch] 用一句话介绍一下 Python 这门编程语言。
+
+========== Query Understanding / Contextual Rewrite ==========
+metric                                    v3_agent   query_understanding
+n                                               17                    17
+intent_accuracy                             0.9412                   1.0
+query_must_contain_rate                      0.875                   1.0
+id_preservation_rate                           1.0                   1.0
+first_retrieval_recall@5                    0.9167                   1.0
+qu_contract_violations                           0                     0
+qu_fallbacks                                     0                     0
+
+---------- Latency [v3_agent] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft                      2124.5    2184.7    3035.0    3191.5    17
+agent_decision_first          1132.2    1119.0    1369.9    1492.3    15
+tool_selection                1144.2    1132.5    1381.7    1502.6    15
+
+---------- Latency [query_understanding] (ms) ----------
+stage                            avg       p50       p95       max     n
+e2e_ttft                      2826.9    2687.8    3983.2    6025.7    17
+query_understanding           1674.4    1728.4    2054.0    2069.6    17
+agent_decision_first          1132.4    1132.4    1132.4    1132.4     1
+tool_selection                1780.6    1734.1    2343.8    3215.9    16
+
+[v3_agent] 第一次检索 Query / standalone_query：
+  ERR '那它扩容呢？'                           → ''  intent=DIRECT recall@5=0.0
+  OK  '那备份呢？'                            → 'MySQL 生产环境备份策略和流程'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '每个阶段要观察多久？'                       → '灰度发布每个阶段观察多久 时间要求'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 P1 呢？'                          → 'P1 故障响应时间要求'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'MySQL 的呢？'                        → 'MySQL 扩容的触发条件'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 MySQL 的慢查询呢？'                   → 'MySQL 慢查询阈值 slow query log threshold'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'access token 呢？'                  → 'access token 有效期'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '开发环境也这样吗？'                        → 'Redis 开发环境持久化配置 AOF RDB'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '主值班没确认它推的告警会怎样？'                  → '飞鸽 主值班 未确认告警 后果'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '第二篇的完整内容给我'                       → "{'document_id': 'mysql_ops', 'view': 'full'} "  intent=DOCUMENT_LOOKUP recall@5=None
+  OK  '它属于哪篇文档？把那篇完整内容给我'                → "{'chunk_id': 'redis_003'} {'document_id': 'redis', 'view': 'full'} "  intent=MULTI_TOOL recall@5=None
+  OK  'redis_ops_006 讲的什么'               → "{'chunk_id': 'redis_ops_006'} "  intent=CHUNK_LOOKUP recall@5=None
+  OK  'redis_ops_004 里说的迁移窗口是几点？'        → "{'chunk_id': 'redis_ops_004'} "  intent=CHUNK_LOOKUP recall@5=None
+  ERR '不在周五的话，哪天可以做常规发布？'                → '常规发布 时间 周五'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '单次迁移超过 1000 个 slot 可以吗？'          → '单次迁移超过 1000 个 slot 限制'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'Redis 怎么扩容？'                      → 'Redis 扩容方法'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '用一句话介绍一下 Python 这门编程语言。'          → ''  intent=DIRECT recall@5=None
+
+[query_understanding] 第一次检索 Query / standalone_query：
+  OK  '那它扩容呢？'                           → 'Redis 怎么扩容？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那备份呢？'                            → 'MySQL 生产环境怎么备份？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '每个阶段要观察多久？'                       → '灰度发布的每个阶段要观察多久？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 P1 呢？'                          → 'P1 故障多久内要响应？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'MySQL 的呢？'                        → 'MySQL 扩容的触发条件是什么？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '那 MySQL 的慢查询呢？'                   → 'MySQL 慢查询的阈值是多少？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'access token 呢？'                  → 'access token 的有效期是多久？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '开发环境也这样吗？'                        → 'Redis 开发环境的持久化怎么配置？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '主值班没确认它推的告警会怎样？'                  → '主值班没确认飞鸽推的告警会怎样？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '第二篇的完整内容给我'                       → "{'document_id': 'mysql_ops'} mysql_ops 的完整内容给我"  intent=DOCUMENT_LOOKUP recall@5=None
+  OK  '它属于哪篇文档？把那篇完整内容给我'                → "{'chunk_id': 'redis_003'} {'document_id': 'redis', 'view': 'full'} redis_003 属于哪篇文档？把那篇完整内容给我"  intent=MULTI_TOOL recall@5=None
+  OK  'redis_ops_006 讲的什么'               → "{'chunk_id': 'redis_ops_006'} redis_ops_006 讲的什么"  intent=CHUNK_LOOKUP recall@5=None
+  OK  'redis_ops_004 里说的迁移窗口是几点？'        → "{'chunk_id': 'redis_ops_004'} redis_ops_004 里说的迁移窗口是几点？"  intent=CHUNK_LOOKUP recall@5=None
+  OK  '不在周五的话，哪天可以做常规发布？'                → '不在周五的话，哪天可以做常规发布？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '单次迁移超过 1000 个 slot 可以吗？'          → '单次迁移超过 1000 个 slot 可以吗？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  'Redis 怎么扩容？'                      → 'Redis 怎么扩容？'  intent=KNOWLEDGE_SEARCH recall@5=1.0
+  OK  '用一句话介绍一下 Python 这门编程语言。'          → '用一句话介绍一下 Python 这门编程语言。'  intent=DIRECT recall@5=None
+
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/query_eval.json

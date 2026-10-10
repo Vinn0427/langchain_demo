@@ -1,0 +1,49 @@
+
+== Step 1: 第一次全量构建
+[Index] full build → rag_verify_incr: 9 documents → 31 chunks, frozen BM25 avgdl=47.87
+[Index] agent.md added → 2 chunks
+[Index] api.md added → 2 chunks
+[Index] deploy.md added → 3 chunks
+[Index] mysql.md added → 3 chunks
+[Index] mysql_ops.md added → 6 chunks
+[Index] oncall.md added → 3 chunks
+[Index] rag.md added → 3 chunks
+[Index] redis.md added → 3 chunks
+[Index] redis_ops.md added → 6 chunks
+  [PASS] 全量构建 embedding chunk 数 = chunk 总数: embedded=31 points=31
+
+== Step 2: 文件不变，再跑一次
+  [PASS] 无修改：0 chunking / 0 embedding / 0 写入: chunked=0 embedded=0 embedding_requests=0 upserted=0 deleted=0 skipped=9
+
+== Step 3: 修改 redis_ops.md（改 1 个 chunk 的一句话 + 新增 1 个小节）
+[Index] redis_ops.md modified → 7 chunks re-chunked, 2 embedded, 5 dense vectors reused (content_hash unchanged)
+  [PASS] 只处理被修改的文件: modified=['redis_ops'] unchanged=8
+  [PASS] 只重新 chunk 该文件: chunked=7 (redis_ops 共 7)
+  [PASS] 只 embedding 内容变化的 chunk: embedded=2 reused=5
+  [PASS] Qdrant 中是新内容: points(redis_ops)=7
+  [PASS] point 总数变化 = 新增小节数: 31 → 32
+  [PASS] 复用的 dense 向量与修改前逐位相同: 5 reused vectors identical
+
+== Step 4: 删除 api.md
+[Index] api deleted from data/ → removed 2 points from Qdrant
+  [PASS] Qdrant 中 api 的 point 全部删除: api points 2 → 0
+  [PASS] manifest 同步删除: api row removed
+  [PASS] 其他文件不处理: chunked=0
+
+== Step 5: 新增 faq.md
+[Index] faq.md added → 1 chunks re-chunked, 1 embedded, 0 dense vectors reused (content_hash unchanged)
+  [PASS] 新增文件：chunk → embedding → upsert → manifest: added=['faq'] embedded=1
+
+== Step 6: 增量结果 vs 同一冻结 avgdl 的全量重建
+  [PASS] point 集合一致: incr=31 full=31
+  [PASS] payload 逐 point 一致: diff=[]
+  [PASS] BM25 sparse vector 逐 point 一致: diff=[]
+  [PASS] dense 向量与全量重建一致（Provider 噪声范围内，cos>0.995）: min cosine=0.997452
+  [PASS] Qdrant BM25 检索分数逐 query 一致（IDF 无残留旧版本）: 65/65 queries identical
+  [INFO] 对照组（Qdrant 默认 optimizer，写入并删除临时 point 后）：63/65 queries 的 BM25 分数与全量重建不同 —— 已删除的 point 仍计入 IDF 统计
+
+== Step 7: pipeline_fingerprint 变化时不能 skip
+  [PASS] fingerprint 变化 → 目标 collection 名变化（build() 会走 Blue-Green）: 0073c1eea2d8defb → 20e46ae5e67d7ddb
+  [PASS] file_hash 不变但 fingerprint 变化：全部文件重新处理: modified=9 unchanged=0
+
+[Verify] 19/19 checks passed → /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/incremental_verification.json

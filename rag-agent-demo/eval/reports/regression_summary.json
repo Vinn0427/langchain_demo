@@ -1,0 +1,448 @@
+{
+  "versions": {
+    "chat_model": "qwen3.8-flash",
+    "embedding_model": "qwen3.7-text-embedding-flash",
+    "embedding_dimension": 1024,
+    "reranker_model": "BAAI/bge-reranker-base",
+    "bm25": {
+      "version": "bm25-jieba-md5-v1",
+      "k1": 1.2,
+      "b": 0.75
+    },
+    "chunk_strategy": "C",
+    "chunk_strategy_version": "heading-v1",
+    "retrieval_text_version": "rt-v1",
+    "routing_mode": "query_understanding",
+    "structured_output_method": "json_schema",
+    "prompt_versions": {
+      "agent": "agent-v4.1",
+      "query_understanding": "qu-v1.1",
+      "grader": "grader-v2",
+      "rewrite": "retrieval-rewrite-v1",
+      "tool_schema": "tools-v1"
+    },
+    "gate": {
+      "high": 0.9,
+      "low": 0.15
+    },
+    "timeouts": {
+      "query_understanding": 12.0,
+      "agent_decision": 12.0,
+      "grader": 5.0,
+      "rewrite": 5.0,
+      "final_answer": 10.0,
+      "embedding": 5.0,
+      "tool": 5.0,
+      "request_deadline": 30.0,
+      "llm_max_attempts": 2
+    },
+    "collection": "rag_demo_v4_c_0073c1ee",
+    "alias": "rag_demo",
+    "packages": {
+      "langchain-core": "0.3.86",
+      "langchain-openai": "0.3.35",
+      "langgraph": "0.6.11",
+      "openai": "2.48.0",
+      "qdrant-client": "1.16.1",
+      "fastembed": "0.7.4",
+      "jieba": "0.42.1"
+    }
+  },
+  "modes": [
+    "query_understanding"
+  ],
+  "retrieval": {
+    "summary": {
+      "dense": {
+        "recall@1": 0.8861,
+        "recall@3": 0.9694,
+        "recall@5": 0.9833,
+        "mrr": 0.9688
+      },
+      "sparse": {
+        "recall@1": 0.8472,
+        "recall@3": 0.9333,
+        "recall@5": 0.9333,
+        "mrr": 0.925
+      },
+      "hybrid_rrf": {
+        "recall@1": 0.8694,
+        "recall@3": 0.9556,
+        "recall@5": 0.9778,
+        "mrr": 0.9542
+      },
+      "hybrid_rerank": {
+        "recall@1": 0.8694,
+        "recall@3": 0.9611,
+        "recall@5": 0.9778,
+        "mrr": 0.9533
+      }
+    },
+    "misses": [
+      {
+        "query": "大表加字段应该用什么工具？",
+        "expected": [
+          "mysql_003"
+        ],
+        "got_top3": [
+          "mysql_001",
+          "mysql_003",
+          "agent_002"
+        ]
+      },
+      {
+        "query": "飞鸽是干什么用的？",
+        "expected": [
+          "oncall_002"
+        ],
+        "got_top3": [
+          "redis_001",
+          "oncall_002",
+          "redis_ops_001"
+        ]
+      },
+      {
+        "query": "redis_003 讲了什么？",
+        "expected": [
+          "redis_003"
+        ],
+        "got_top3": [
+          "redis_001",
+          "redis_ops_006",
+          "redis_ops_005"
+        ]
+      },
+      {
+        "query": "redis_ops_006 这个 chunk 的内容",
+        "expected": [
+          "redis_ops_006"
+        ],
+        "got_top3": [
+          "redis_ops_004",
+          "redis_ops_001",
+          "redis_001"
+        ]
+      }
+    ],
+    "latency": {
+      "query_embedding": {
+        "n": 60,
+        "avg": 138.3,
+        "p50": 115.9,
+        "p95": 192.5,
+        "max": 469.1
+      },
+      "dense_retrieval": {
+        "n": 60,
+        "avg": 6.1,
+        "p50": 6.2,
+        "p95": 7.5,
+        "max": 8.1
+      },
+      "sparse_retrieval": {
+        "n": 60,
+        "avg": 3.2,
+        "p50": 3.1,
+        "p95": 3.9,
+        "max": 7.0
+      },
+      "rrf_fusion": {
+        "n": 60,
+        "avg": 0.1,
+        "p50": 0.0,
+        "p95": 0.1,
+        "max": 0.1
+      },
+      "hybrid_retrieval": {
+        "n": 60,
+        "avg": 147.7,
+        "p50": 125.7,
+        "p95": 202.7,
+        "max": 481.2
+      },
+      "rerank": {
+        "n": 60,
+        "avg": 339.3,
+        "p50": 327.8,
+        "p95": 443.6,
+        "max": 450.0
+      },
+      "retrieval_total": {
+        "n": 60,
+        "avg": 487.0,
+        "p50": 461.5,
+        "p95": 629.6,
+        "max": 836.0
+      }
+    },
+    "rerank_top1": {
+      "positive": {
+        "n": 60,
+        "min": 0.002,
+        "p50": 0.995,
+        "max": 1.0
+      },
+      "no_answer": {
+        "n": 5,
+        "min": 0.004,
+        "p50": 0.079,
+        "max": 0.795
+      }
+    }
+  },
+  "run_chunk_eval.py": {
+    "exit_code": 0
+  },
+  "../scripts/verify_incremental.py": {
+    "exit_code": 0
+  },
+  "chunk_strategy": {
+    "selected": "C",
+    "rule": "max(hybrid_rerank MRR, hybrid_rerank Recall@1, hybrid_rrf MRR)",
+    "hybrid_rerank": {
+      "A": {
+        "recall@1": 0.7972,
+        "recall@3": 0.9333,
+        "recall@5": 0.9694,
+        "mrr": 0.9028
+      },
+      "B": {
+        "recall@1": 0.8639,
+        "recall@3": 0.9556,
+        "recall@5": 0.9611,
+        "mrr": 0.9389
+      },
+      "C": {
+        "recall@1": 0.8694,
+        "recall@3": 0.9611,
+        "recall@5": 0.9778,
+        "mrr": 0.9533
+      }
+    },
+    "analysis_raw": {
+      "field": "raw_text",
+      "chunk_count": 31,
+      "token_avg": 53.8,
+      "token_p50": 52.0,
+      "token_p95": 96.5,
+      "token_min": 16,
+      "token_max": 123,
+      "char_avg": 111.9,
+      "too_short_threshold": 32,
+      "too_long_threshold": 400,
+      "too_short_ratio": 0.161,
+      "too_long_ratio": 0.0,
+      "too_short_chunks": [
+        "mysql_ops_002",
+        "mysql_ops_004",
+        "mysql_ops_005",
+        "mysql_ops_006",
+        "redis_ops_003"
+      ],
+      "too_long_chunks": []
+    }
+  },
+  "incremental": {
+    "passed": true,
+    "checks": "19/19"
+  },
+  "query": {
+    "query_understanding": {
+      "n": 17,
+      "intent_accuracy": 1.0,
+      "query_must_contain_rate": 1.0,
+      "id_preservation_rate": 1.0,
+      "first_retrieval_recall@5": 1.0,
+      "qu_contract_violations": 0,
+      "qu_fallbacks": 0
+    }
+  },
+  "tool": {
+    "query_understanding": {
+      "n": 42,
+      "intent_accuracy": 1.0,
+      "candidate_tool_recall": 0.973,
+      "tool_selection_accuracy": 1.0,
+      "first_tool_accuracy": 1.0,
+      "tool_argument_valid_rate": 1.0,
+      "tool_execution_success_rate": 1.0,
+      "tool_business_success_rate": 0.8333,
+      "unnecessary_tool_call_rate": 0.0,
+      "wrong_tool_rate": 0.0,
+      "direct_accuracy": 1.0,
+      "multi_tool_task_success_rate": 1.0,
+      "expected_args_accuracy": 1.0,
+      "answer_contains_rate": 1.0,
+      "no_answer_correct_rate": 1.0,
+      "not_found_handled_rate": 1.0,
+      "source_integrity_rate": 1.0,
+      "total_tool_calls": 42
+    }
+  },
+  "no_answer": {
+    "query_understanding": {
+      "no_answer_correct_rate": 1.0,
+      "retrieval_no_answer_rerank_top1": {
+        "n": 5,
+        "min": 0.004,
+        "p50": 0.079,
+        "max": 0.795
+      }
+    }
+  },
+  "latency": {
+    "query_understanding": {
+      "e2e_ttft_direct": {
+        "n": 5,
+        "avg": 4393.1,
+        "p50": 2857.2,
+        "p95": 10292.2,
+        "max": 12065.4
+      },
+      "e2e_ttft_rag": {
+        "n": 10,
+        "avg": 5248.8,
+        "p50": 3739.0,
+        "p95": 10491.0,
+        "max": 11234.7
+      },
+      "e2e_ttft_exact_lookup": {
+        "n": 14,
+        "avg": 4456.9,
+        "p50": 3249.6,
+        "p95": 9716.8,
+        "max": 15673.9
+      },
+      "total_all": {
+        "n": 42,
+        "avg": 7060.6,
+        "p50": 5456.7,
+        "p95": 14990.8,
+        "max": 20684.3
+      },
+      "query_understanding": {
+        "n": 42,
+        "avg": 3480.8,
+        "p50": 2357.7,
+        "p95": 9796.8,
+        "max": 15182.2
+      },
+      "agent_decision_first": {
+        "n": 5,
+        "avg": 1390.3,
+        "p50": 1262.5,
+        "p95": 1996.1,
+        "max": 2041.9
+      },
+      "tool_selection_latency": {
+        "n": 37,
+        "avg": 3638.5,
+        "p50": 2619.6,
+        "p95": 8090.3,
+        "max": 15184.5
+      },
+      "tool_execution_latency_rag": {
+        "n": 16,
+        "avg": 1376.7,
+        "p50": 664.2,
+        "p95": 3628.9,
+        "max": 8051.5
+      },
+      "tool_execution_latency_exact": {
+        "n": 26,
+        "avg": 6.9,
+        "p50": 5.5,
+        "p95": 13.0,
+        "max": 13.4
+      }
+    }
+  },
+  "stability": {
+    "query_understanding": {
+      "requests": 42,
+      "llm_attempts": 115,
+      "llm_logical_calls": 113,
+      "attempt_status_counts": {
+        "success": 113,
+        "timeout": 2
+      },
+      "timeout_rate": 0.0174,
+      "retry_rate": 0.0177,
+      "structured_calls": 49,
+      "structured_parse_failure_rate": 0.0,
+      "structured_unrecovered_rate": 0.0,
+      "structured_reask_count": 0,
+      "rag_requests": 16,
+      "query_rewrite_rate": 0.1875,
+      "grader_trigger_rate": 0.1875,
+      "tool_calls": 42,
+      "tool_error_rate": 0.0,
+      "duplicate_tool_call_rate": 0.0,
+      "no_answer_rate": 0.0714,
+      "llm_error_answers": 0
+    }
+  },
+  "checks": {
+    "retrieval.hybrid_rerank.recall@5": {
+      "value": 0.9778,
+      "threshold": 0.9,
+      "ok": true
+    },
+    "retrieval.hybrid_rerank.mrr": {
+      "value": 0.9533,
+      "threshold": 0.9,
+      "ok": true
+    },
+    "incremental.passed": {
+      "value": true,
+      "threshold": true,
+      "ok": true
+    },
+    "query.intent_accuracy": {
+      "value": 1.0,
+      "threshold": 0.9,
+      "ok": true
+    },
+    "query.query_must_contain_rate": {
+      "value": 1.0,
+      "threshold": 0.85,
+      "ok": true
+    },
+    "tool.intent_accuracy": {
+      "value": 1.0,
+      "threshold": 0.9,
+      "ok": true
+    },
+    "tool.tool_selection_accuracy": {
+      "value": 1.0,
+      "threshold": 0.9,
+      "ok": true
+    },
+    "tool.tool_argument_valid_rate": {
+      "value": 1.0,
+      "threshold": 0.95,
+      "ok": true
+    },
+    "tool.tool_execution_success_rate": {
+      "value": 1.0,
+      "threshold": 0.98,
+      "ok": true
+    },
+    "tool.multi_tool_task_success_rate": {
+      "value": 1.0,
+      "threshold": 0.75,
+      "ok": true
+    },
+    "tool.no_answer_correct_rate": {
+      "value": 1.0,
+      "threshold": 1.0,
+      "ok": true
+    },
+    "tool.source_integrity_rate": {
+      "value": 1.0,
+      "threshold": 1.0,
+      "ok": true
+    }
+  },
+  "passed": true
+}

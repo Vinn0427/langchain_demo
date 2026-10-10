@@ -1,0 +1,75 @@
+
+==================== Part A：V3 配置重放（timeout=60.0, max_retries=2）====================
+[V3 view] final_llm 调用：model_ttft=60971 ms  total=61462 ms  —— 调用方能看到的只有这两个数
+[V3 hidden] SDK 实际发出 HTTP 请求 2 次：第 1 次在 read timeout 60.0s 后 httpx.ReadTimeout → openai.APITimeoutError，SDK 静默重试；第 2 次成功（≈971 ms 首 token）
+
+==================== Part B：V4 分阶段 Timeout + 逐 attempt Trace ====================
+
+--- final_answer 首 token 挂起（复现 V3 的 60s 位置）  [LLM_FAULT_INJECTION=final_answer:1:stall ROUTING_MODE=query_understanding ] ---
+[User] Redis 怎么扩容？
+  [FaultInjection] enabled: final_answer:1:stall
+  [LLM] req=3cbc6261 call=3cbc6261-01 phase=query_understanding attempt=1 status=success latency=1459ms timeout=8.0s
+  [LLM] req=3cbc6261 call=3cbc6261-02 phase=query_embedding attempt=1 status=success latency=341ms timeout=5.0s
+  [LLM] req=3cbc6261 call=3cbc6261-03 phase=final_answer attempt=1 status=timeout latency=10007ms timeout=10.0s error=APITimeoutError → retry (reason=timeout)
+  [Assistant] Redis 扩容主要通过增加分片来实现，具体规范如下：
+  model_ttft                10897.9 ms
+  e2e_ttft                  13189.8 ms
+  total                     15336.8 ms   墙钟时间，不等于各阶段相加
+  deadline                    30000 ms   request_id=3cbc6261
+  (process wall time incl. startup 17.1s)
+
+--- query_understanding 返回 429  [LLM_FAULT_INJECTION=query_understanding:1:429 ROUTING_MODE=query_understanding ] ---
+[User] 灰度放量分几个阶段？
+  [FaultInjection] enabled: query_understanding:1:429
+  [LLM] req=47d001cd call=47d001cd-01 phase=query_understanding attempt=1 status=rate_limit latency=29ms timeout=8.0s error=RateLimitError → retry (reason=rate_limit)
+  [LLM] req=47d001cd call=47d001cd-01 phase=query_understanding attempt=2 status=success latency=1471ms timeout=8.0s
+  [LLM] req=47d001cd call=47d001cd-02 phase=query_embedding attempt=1 status=success latency=286ms timeout=5.0s
+  [Assistant] 灰度放量分为以下四个阶段：
+  model_ttft                  486.4 ms
+  e2e_ttft                   3170.3 ms
+  total                      4212.0 ms   墙钟时间，不等于各阶段相加
+  deadline                    30000 ms   request_id=47d001cd
+  (process wall time incl. startup 6.0s)
+
+--- v3_agent 模式 agent_decision 返回 500  [LLM_FAULT_INJECTION=agent_decision:1:500 ROUTING_MODE=v3_agent ] ---
+[User] 灰度放量分几个阶段？
+  [FaultInjection] enabled: agent_decision:1:500
+  [LLM] req=97d1722a call=97d1722a-01 phase=agent_decision attempt=1 status=server_error latency=27ms timeout=8.0s error=InternalServerError → retry (reason=server_error)
+  [LLM] req=97d1722a call=97d1722a-01 phase=agent_decision attempt=2 status=success latency=1352ms timeout=8.0s first_token=1129ms
+  [LLM] req=97d1722a call=97d1722a-02 phase=query_embedding attempt=1 status=success latency=351ms timeout=5.0s
+  [Assistant] 根据知识库信息，新版本灰度放量分为以下四个阶段：
+  model_ttft                 1004.2 ms
+  e2e_ttft                   3612.0 ms
+  total                      4661.1 ms   墙钟时间，不等于各阶段相加
+  deadline                    30000 ms   request_id=97d1722a
+  (process wall time incl. startup 6.4s)
+
+--- query_rewrite 连接失败  [LLM_FAULT_INJECTION=query_rewrite:1:connect ROUTING_MODE=query_understanding ] ---
+[User] Kafka ISR 是怎么实现的？
+  [FaultInjection] enabled: query_rewrite:1:connect
+  [LLM] req=4aa7d5e5 call=4aa7d5e5-01 phase=query_understanding attempt=1 status=success latency=1532ms timeout=8.0s
+  [LLM] req=4aa7d5e5 call=4aa7d5e5-02 phase=query_embedding attempt=1 status=success latency=294ms timeout=5.0s
+  [LLM] req=4aa7d5e5 call=4aa7d5e5-03 phase=query_rewrite attempt=1 status=connection_error latency=1ms timeout=5.0s error=APIConnectionError → retry (reason=connection_error)
+  [LLM] req=4aa7d5e5 call=4aa7d5e5-03 phase=query_rewrite attempt=2 status=success latency=915ms timeout=5.0s
+  [LLM] req=4aa7d5e5 call=4aa7d5e5-04 phase=query_embedding attempt=1 status=success latency=202ms timeout=5.0s
+  [Assistant] 知识库中没有足够信息支持回答。[Agent] deterministic answer (no_answer), no LLM call
+  model_ttft                    0.0 ms
+  e2e_ttft                   4199.1 ms
+  total                      4199.6 ms   墙钟时间，不等于各阶段相加
+  deadline                    30000 ms   request_id=4aa7d5e5
+  (process wall time incl. startup 5.9s)
+
+--- REQUEST_DEADLINE=12s 时 final_answer 连续挂起（尾延迟被 deadline 截断）  [LLM_FAULT_INJECTION=final_answer:1:stall,final_answer:2:stall ROUTING_MODE=query_understanding {'REQUEST_DEADLINE': '12'}] ---
+[User] Redis 怎么扩容？
+  [FaultInjection] enabled: final_answer:1:stall,final_answer:2:stall
+  [LLM] req=33ed8b60 call=33ed8b60-01 phase=query_understanding attempt=1 status=success latency=1616ms timeout=5.87s
+  [LLM] req=33ed8b60 call=33ed8b60-02 phase=query_embedding attempt=1 status=success latency=318ms timeout=5.0s
+  [LLM] req=33ed8b60 call=33ed8b60-03 phase=final_answer attempt=1 status=timeout latency=9597ms timeout=9.59s error=APITimeoutError
+  [Assistant] 抱歉，模型服务暂时不可用（final_answer: timeout），请稍后重试。
+  model_ttft                    0.0 ms
+  e2e_ttft                  12008.9 ms
+  total                     12009.4 ms   墙钟时间，不等于各阶段相加
+  deadline                    12000 ms   request_id=33ed8b60
+  (process wall time incl. startup 13.8s)
+
+[Report] /Users/ewan/Downloads/demo/rag-agent-demo/eval/reports/timeout_reproduction.log

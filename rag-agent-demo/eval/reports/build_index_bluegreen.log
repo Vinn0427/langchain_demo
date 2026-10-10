@@ -1,0 +1,30 @@
+[Index] Qdrant: http://localhost:6333  alias: rag_demo  data: /Users/ewan/Downloads/demo/rag-agent-demo/data
+[Index] alias 'rag_demo' → (none)
+[Index] pipeline_fingerprint=0073c1eea2d8defb → target collection rag_demo_v4_c_0073c1ee
+[Index] agent.md unchanged → skipped
+[Index] api.md unchanged → skipped
+[Index] deploy.md unchanged → skipped
+[Index] mysql.md unchanged → skipped
+[Index] mysql_ops.md unchanged → skipped
+[Index] oncall.md unchanged → skipped
+[Index] rag.md unchanged → skipped
+[Index] redis.md unchanged → skipped
+[Index] redis_ops.md unchanged → skipped
+[BlueGreen] green rag_demo_v4_c_0073c1ee: {'dataset_sha': '50adaa3b885c', 'n': 60, 'hybrid_rerank_recall@5': 0.9778, 'hybrid_rerank_mrr': 0.9533}
+[BlueGreen] alias 'rag_demo': (none) → rag_demo_v4_c_0073c1ee（原子切换；旧 collection 保留，可回滚）
+
+========== Indexing ==========
+mode                 incremental  (rag_demo_v4_c_0073c1ee)
+documents scanned    9
+added / modified     [] / []
+unchanged (skipped)  ['agent', 'api', 'deploy', 'mysql', 'mysql_ops', 'oncall', 'rag', 'redis', 'redis_ops']
+deleted              []
+chunks chunked       0
+chunks embedded      0   (embedding requests: 0)
+dense vectors reused 0
+points upserted      0   points deleted: 0
+points in collection 31
+BM25 avgdl           frozen=47.871 actual=47.871 drift=0.0
+total                      3.1 ms
+alias switched       True
+==============================
